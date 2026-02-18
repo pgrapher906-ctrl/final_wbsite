@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaFlow - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Logo Section -->
+            <div class="logo-section">
+                <div class="logo-icon">🌊</div>
+                <h1 class="app-title">AquaFlow</h1>
+                <p class="app-subtitle">Smart Water Quality IoT System</p>
+            </div>
+
+            <!-- Login Form -->
+            <form method="POST" action="{{ url_for('main.login') }}" class="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        class="form-input" 
+                        placeholder="Enter your username" 
+                        required 
+                        autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input" 
+                        placeholder="Enter your password" 
+                        required>
+                </div>
+
+                {% if error %}
+                <div class="error-message">
+                    <span class="error-icon">⚠️</span>
+                    {{ error }}
+                </div>
+                {% endif %}
+
+                <button type="submit" class="login-btn">
+                    <span class="btn-text">Sign In</span>
+                    <span class="btn-icon">→</span>
+                </button>
+            </form>
+
+            <!-- Registration Link -->
+            <div class="auth-link">
+                <p>Don't have an account? <a href="{{ url_for('main.register') }}">Create One</a></p>
+            </div>
+
+            <!-- Footer -->
+            <div class="login-footer">
+                <p>🔒 Secure Smart Water Quality System</p>
+                <p style="margin-top: 8px; color: #999; font-size: 12px;">
+                    © 2026 AquaFlow. All rights reserved.
+                </p>
+            </div>
+        </div>
+
+        <!-- Background Animation -->
+        <div class="background-animation">
+            <div class="water-wave water-wave-1"></div>
+            <div class="water-wave water-wave-2"></div>
+            <div class="water-wave water-wave-3"></div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaFlow - Water Quality Monitor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Leaflet.js Map Library -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <h1>🌊 AquaFlow</h1>
+            </div>
+            <ul class="navbar-menu">
+                <li><a href="/" class="active">Dashboard</a></li>
+                <li><a href="#data-section">Data</a></li>
+                <li><a href="#export-section">Export</a></li>
+                <li><a href="#map-section">Map</a></li>
+            </ul>
+            <div class="navbar-user">
+                <span class="user-info">👤 {{ session.get('username', 'User') }}</span>
+                <a href="{{ url_for('main.change_password') }}" class="settings-btn">⚙️ Settings</a>
+                <a href="{{ url_for('main.logout') }}" class="logout-btn">🚪 Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Header Section -->
+        <section class="header-section">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2>Real-Time Water Quality Monitoring</h2>
+                    <p>IoT-enabled environmental monitoring system with automatic GPS detection</p>
+                </div>
+                <!-- Theme Selector -->
+                <div class="theme-selector">
+                    <label for="themeSelect">🎨 Theme:</label>
+                    <select id="themeSelect" class="theme-select">
+                        <option value="blue">Blue (Default)</option>
+                        <option value="dark">Dark</option>
+                        <option value="green">Green</option>
+                        <option value="purple">Purple</option>
+                        <option value="orange">Orange</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- GPS Location Section -->
+        <section class="location-section card">
+            <div class="section-title">📍 GPS Location Detection</div>
+            <div class="location-content">
+                <button id="gpsButton" class="btn btn-primary">
+                    <span id="gpsButtonText">🔍 Detect Location</span>
+                </button>
+                <div id="locationStatus" class="location-status"></div>
+                <div class="location-info">
+                    <div class="info-group">
+                        <label>Latitude:</label>
+                        <input type="text" id="latitudeInput" class="info-input" readonly>
+                    </div>
+                    <div class="info-group">
+                        <label>Longitude:</label>
+                        <input type="text" id="longitudeInput" class="info-input" readonly>
+                    </div>
+                    <div class="info-group">
+                        <label>Accuracy:</label>
+                        <input type="text" id="accuracyInput" class="info-input" readonly>
+                    </div>
+                    <div class="info-group">
+                        <label>Last Updated:</label>
+                        <input type="text" id="updatedInput" class="info-input" readonly>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Input Section -->
+        <section class="input-section card" id="input-section">
+            <div class="section-title">📊 Add Sensor Data</div>
+            
+            <!-- Sensor Status -->
+            <div class="sensor-status-box">
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span>Listening for External IoT Hardware...</span>
+                </div>
+                <p class="sensor-info">Data from external hardware kits will automatically populate below</p>
+            </div>
+            
+            <form id="sensorForm" class="sensor-form">
+                <!-- Water Type - Full Width -->
+                <div class="form-group form-group-full">
+                    <label for="waterType">🌊 Water Type:</label>
+                    <select id="waterType" required>
+                        <option value="">-- Select Water Type --</option>
+                        <option value="drinking">Drinking Water</option>
+                        <option value="groundwater">Groundwater</option>
+                        <option value="ocean">Ocean Water</option>
+                    </select>
+                </div>
+
+                <!-- Water Quality Parameters - 3 Columns -->
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label for="chlorophyll">🟢 Chlorophyll (mg/L):</label>
+                        <input type="number" id="chlorophyll" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="pigments">🎨 Pigments (mg/L):</label>
+                        <input type="number" id="pigments" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="alkalinity">⚗️ Total Alkalinity (mg/L):</label>
+                        <input type="number" id="alkalinity" step="0.01" placeholder="0.00">
+                    </div>
+                </div>
+
+                <!-- Additional Parameters - 3 Columns -->
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label for="dic">💨 DIC (mmol/L):</label>
+                        <input type="number" id="dic" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="temperature">🌡️ Temperature (°C):</label>
+                        <input type="number" id="temperature" step="0.1" placeholder="0.0">
+                    </div>
+                    <div class="form-group">
+                        <label for="sensorId">📱 Sensor ID (Optional):</label>
+                        <input type="text" id="sensorId" placeholder="e.g., SENSOR-001">
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success btn-large">
+                        ✅ Submit Reading
+                    </button>
+                </div>
+            </form>
+            <div id="submitStatus" class="status-message"></div>
+        </section>
+
+        <!-- Statistics Section -->
+        <section class="stats-section card">
+            <div class="section-title">📈 System Statistics</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="totalReadings">0</h3>
+                    <p>Total Readings</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="avgTemperature">--</h3>
+                    <p>Avg Temperature (°C)</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="avgChlorophyll">--</h3>
+                    <p>Avg Chlorophyll (mg/L)</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="waterTypesCount">0</h3>
+                    <p>Water Type Sources</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filters Section -->
+        <section class="filters-section card" id="data-section">
+            <div class="section-title">🔍 Filter & Search Data</div>
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="filterWaterType">Water Type:</label>
+                    <select id="filterWaterType">
+                        <option value="">All</option>
+                        <option value="drinking">Drinking Water</option>
+                        <option value="groundwater">Groundwater</option>
+                        <option value="ocean">Ocean Water</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterStartDate">Start Date:</label>
+                    <input type="date" id="filterStartDate">
+                </div>
+                <div class="filter-group">
+                    <label for="filterEndDate">End Date:</label>
+                    <input type="date" id="filterEndDate">
+                </div>
+                <div class="filter-group">
+                    <label for="sortBy">Sort By:</label>
+                    <select id="sortBy">
+                        <option value="timestamp">Date (Latest First)</option>
+                        <option value="temperature">Temperature</option>
+                        <option value="chlorophyll">Chlorophyll</option>
+                        <option value="latitude">Latitude</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" onclick="loadReadings()">Apply Filters</button>
+                <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+            </div>
+        </section>
+
+        <!-- Data Table Section -->
+        <section class="data-section card">
+            <div class="section-title">📋 Water Quality Data</div>
+            <div class="table-responsive">
+                <table id="dataTable" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Latitude</th>
+                            <th>Longitude</th>
+                            <th>Water Type</th>
+                            <th>Chlorophyll (mg/L)</th>
+                            <th>Pigments (mg/L)</th>
+                            <th>Alkalinity (mg/L)</th>
+                            <th>DIC (mmol/L)</th>
+                            <th>Temperature (°C)</th>
+                            <th>Sensor ID</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr><td colspan="12" class="text-center">Loading data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="pagination" class="pagination"></div>
+        </section>
+
+        <!-- Export Section -->
+        <section class="export-section card" id="export-section">
+            <div class="section-title">📥 Export Data</div>
+            <div class="export-controls">
+                <p>Download all filtered data as Excel spreadsheet</p>
+                <button id="exportBtn" class="btn btn-primary" onclick="exportToExcel()">
+                    📊 Download Excel (.xlsx)
+                </button>
+            </div>
+        </section>
+
+        <!-- Map Section -->
+        <section class="map-section card" id="map-section">
+            <div class="section-title">🗺️ Measurement Locations Map</div>
+            <p class="map-info">Real-time GPS-detected measurement points on interactive map</p>
+            <div id="map" class="map-container"></div>
+            <div id="locationsList" class="locations-list"></div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 IoT Water Quality Monitoring System. All rights reserved.</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/themes.js') }}"></script>
+</body>
+</html>

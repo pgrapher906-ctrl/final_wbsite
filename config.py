@@ -1,11 +1,15 @@
 import os
 
 class Config:
-    # This reads the specific Neon link you pasted into Render
-    uri = os.environ.get("DATABASE_URL")
+    # ---------------------------------------------------------
+    # REPLACE THE LINE BELOW WITH YOUR NEON LINK
+    # ---------------------------------------------------------
+    uri = "postgresql://neondb_owner:npg_qna54HgPVOvb@ep-flat-wind-aiezn0bh-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require"
+    
+    # This fixes a compatibility issue with Render and Neon
     if uri and uri.startswith("postgres://"):
         uri = uri.replace("postgres://", "postgresql://", 1)
     
     SQLALCHEMY_DATABASE_URI = uri
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = os.environ.get("SECRET_KEY", "fallback_dev_key")
+    SECRET_KEY = "smart_water_2026_secure_key"

@@ -81,7 +81,7 @@ def get_data():
         
     return jsonify([r.to_dict() for r in readings])
 
-# --- IMAGE SERVING ROUTE (NEW) ---
+# --- IMAGE SERVING ROUTE (UPDATED FOR BASE64) ---
 @main_bp.route('/image/<int:record_id>')
 @login_required
 def get_image(record_id):
@@ -91,13 +91,14 @@ def get_image(record_id):
     # Check if record exists and has image data
     if record and record.image_path:
         try:
-            image_data = record.image_path
+            image_text = record.image_path
+            
             # If stored as data URI (e.g., "data:image/jpeg;base64,..."), strip the header
-            if "," in image_data:
-                image_data = image_data.split(",")[1]
+            if "," in image_text:
+                image_text = image_text.split(",")[1]
                 
-            # Decode Base64 to binary
-            img_bytes = base64.b64decode(image_data)
+            # Decode Base64 Text -> Binary Image
+            img_bytes = base64.b64decode(image_text)
             
             return send_file(
                 BytesIO(img_bytes),
@@ -115,7 +116,6 @@ def get_image(record_id):
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
-    # Matches the same filter logic as get_data
     if project == 'Ocean':
         readings = WaterData.query.filter(
             or_(
@@ -141,7 +141,6 @@ def export_excel(project):
             row['Date'] = r.timestamp.strftime('%Y-%m-%d')
             row['Time'] = r.timestamp.strftime('%H:%M:%S')
         
-        # Clean up image field for Excel (too long text)
         row['image_path'] = "Image Available" if row.get('image_path') else "No Image"
         
         data.append(row)

@@ -110,11 +110,6 @@ def export_excel(project):
     output.seek(0)
     return send_file(output, as_attachment=True, download_name=f"AquaFlow_{project}.xlsx")
 
-@main_bp.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('main.login'))
-
 import base64
 
 # ... existing code ...
@@ -141,4 +136,9 @@ def get_image(record_id):
         )
     
     return "Image not found", 404
-    
+
+@main_bp.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('main.login'))
+

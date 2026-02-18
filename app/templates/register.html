@@ -9,105 +9,43 @@
 <body>
     <div class="login-container">
         <div class="login-card">
-            <!-- Logo Section -->
             <div class="logo-section">
                 <div class="logo-icon">🌊</div>
                 <h1 class="app-title">AquaFlow</h1>
                 <p class="app-subtitle">Create Your Account</p>
             </div>
 
-            <!-- Registration Form -->
-            <form method="POST" action="{{ url_for('main.register') }}" class="login-form" enctype="multipart/form-data">
+            <form method="POST" action="{{ url_for('main.register') }}" class="login-form">
                 <div class="form-group">
                     <label for="username">Username</label>
-                    <input 
-                        type="text" 
-                        id="username" 
-                        name="username" 
-                        class="form-input" 
-                        placeholder="Choose a username" 
-                        required 
-                        minlength="3"
-                        maxlength="30"
-                        autofocus>
-                    <small style="color: #666; margin-top: 4px; display: block;">3-30 characters, letters and numbers only</small>
+                    <input type="text" id="username" name="username" class="form-input" placeholder="Choose a username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email" required>
                 </div>
 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        name="password" 
-                        class="form-input" 
-                        placeholder="Create a strong password" 
-                        required
-                        minlength="6">
-                    <small style="color: #666; margin-top: 4px; display: block;">Minimum 6 characters</small>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Create a password" required>
                 </div>
 
                 <div class="form-group">
                     <label for="confirm_password">Confirm Password</label>
-                    <input 
-                        type="password" 
-                        id="confirm_password" 
-                        name="confirm_password" 
-                        class="form-input" 
-                        placeholder="Confirm your password" 
-                        required
-                        minlength="6">
-                </div>
-
-                <div class="form-group">
-                    <label for="profile_photo">Profile Photo (Optional)</label>
-                    <input 
-                        type="file" 
-                        id="profile_photo" 
-                        name="profile_photo" 
-                        class="form-input" 
-                        accept="image/*">
-                    <small style="color: #666; margin-top: 4px; display: block;">JPG, PNG, or GIF (Max 5MB)</small>
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-input" placeholder="Confirm your password" required>
                 </div>
 
                 {% if error %}
-                <div class="error-message">
-                    <span class="error-icon">⚠️</span>
-                    {{ error }}
-                </div>
+                <div class="error-message">⚠️ {{ error }}</div>
                 {% endif %}
 
-                {% if success %}
-                <div class="success-message">
-                    <span class="success-icon">✅</span>
-                    {{ success }}
-                </div>
-                {% endif %}
-
-                <button type="submit" class="login-btn">
-                    <span class="btn-text">Create Account</span>
-                    <span class="btn-icon">→</span>
-                </button>
+                <button type="submit" class="login-btn">Create Account →</button>
             </form>
 
-            <!-- Login Link -->
             <div class="auth-link">
                 <p>Already have an account? <a href="{{ url_for('main.login') }}">Sign In</a></p>
             </div>
-
-            <!-- Footer -->
-            <div class="login-footer">
-                <p>🔒 Secure Smart Water Quality System</p>
-                <p style="margin-top: 8px; color: #999; font-size: 12px;">
-                    © 2026 AquaFlow. All rights reserved.
-                </p>
-            </div>
-        </div>
-
-        <!-- Background Animation -->
-        <div class="background-animation">
-            <div class="water-wave water-wave-1"></div>
-            <div class="water-wave water-wave-2"></div>
-            <div class="water-wave water-wave-3"></div>
         </div>
     </div>
 </body>

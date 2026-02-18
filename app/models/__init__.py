@@ -1,4 +1,3 @@
-from app.models.water_reading import WaterReading
-from app.models.user import User
+from flask_sqlalchemy import SQLAlchemy
 
-__all__ = ['WaterReading', 'User']
+db = SQLAlchemy()

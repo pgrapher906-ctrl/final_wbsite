@@ -103,7 +103,6 @@
             const res = await fetch(`/api/data?project=${proj}`);
             const data = await res.json();
             
-            // Define columns based on project
             const cols = proj === 'Ocean' 
                 ? ['timestamp', 'water_type', 'latitude', 'longitude', 'pin_id', 'ph', 'tds', 'temperature', 'image_path']
                 : ['timestamp', 'water_type', 'latitude', 'longitude', 'pin_id', 'temperature', 'ph', 'do', 'tds', 'image_path'];
@@ -116,13 +115,13 @@
             
             document.getElementById('tbody').innerHTML = data.map(r => {
                 let rowHtml = cols.map(key => {
-                    // Date Format
                     if(key === 'timestamp') return `<td>${new Date(r[key]).toLocaleString()}</td>`;
                     
                     // --- FIXED IMAGE LOGIC ---
-                    // Instead of using r.image_path (which is just text), we use r.id to ask the server for the image
                     if(key === 'image_path') {
-                        if (r.id) {
+                        // If 'image_path' is not null, it means we have data.
+                        // We use the record ID (r.id) to fetch the actual image.
+                        if (r.image_path) {
                              return `<td><a href="/image/${r.id}" target="_blank" style="color:#1ABC9C; font-weight:bold;">View Image</a></td>`;
                         } else {
                              return `<td>No Image</td>`;
@@ -137,8 +136,6 @@
         }
 
         function exportExcel() { window.location.href = `/export/${currentProject}`; }
-        
-        // Load default
         loadData('Ocean');
     </script>
 </body>

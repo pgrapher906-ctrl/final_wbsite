@@ -1,36 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AquaFlow Dashboard</title>
+    <title>AquaFlow - Data Viewer</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <style>
         :root { --primary: #0A3D62; --teal: #1ABC9C; }
         body { margin: 0; font-family: sans-serif; background: #f4f7f6; }
-        /* NAVBAR Styling */
         .navbar { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-        .nav-right { display: flex; align-items: center; gap: 20px; }
-        .info-icon { cursor: pointer; font-size: 1.2rem; position: relative; }
-        /* Tooltip for Visit Count & Last Login */
+        .info-icon { cursor: pointer; position: relative; font-size: 1.2rem; }
         .info-icon:hover::after {
             content: "Visit Count: {{ session.visit_count }}\nLast Login: {{ session.last_login }}";
             position: absolute; right: 0; top: 30px; background: #333; color: white; padding: 10px; border-radius: 5px; white-space: pre; z-index: 1000; font-size: 0.8rem;
         }
-        .container { padding: 20px; }
+        .container { padding: 20px; max-width: 1200px; margin: auto; }
         .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        #map { height: 400px; width: 100%; border-radius: 8px; }
-        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; margin-right: 10px; }
-        .btn-ocean { background: var(--teal); }
-        .btn-pond { background: #34495e; }
-        .btn-export { background: #27ae60; float: right; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
+        #map { height: 400px; width: 100%; border-radius: 8px; margin-top: 15px; }
+        .btn { background: var(--teal); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { background: var(--primary); color: white; padding: 12px; text-align: left; }
         td { padding: 12px; border-bottom: 1px solid #ddd; }
+        .coord-box { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 4px; background: #fafafa; }
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <div class="logo">🌊 AquaFlow</div>
-        <div class="nav-right">
+        <div>🌊 AquaFlow Data Center</div>
+        <div style="display: flex; align-items: center; gap: 20px;">
             <span>👤 {{ session.username }}</span>
             <span class="info-icon">ℹ️</span>
             <a href="/logout" style="color: white; text-decoration: none; border: 1px solid white; padding: 5px 10px; border-radius: 4px;">Logout</a>
@@ -39,23 +34,28 @@
 
     <div class="container">
         <div class="card">
-            <h3>Step 1 – Location Filter</h3>
+            <h3>Step 1 – Detect Location</h3>
+            <button class="btn" onclick="getLocation()">Detect Location</button>
+            <div style="display: flex; gap: 15px; margin-top: 15px;">
+                <input type="text" id="latDisp" class="coord-box" placeholder="Latitude" readonly>
+                <input type="text" id="lonDisp" class="coord-box" placeholder="Longitude" readonly>
+            </div>
             <div id="map"></div>
         </div>
 
         <div class="card">
             <h3>Step 2 – Project Selection</h3>
-            <button class="btn btn-ocean" onclick="loadData('Ocean')">Ocean Monitoring</button>
-            <button class="btn btn-pond" onclick="loadData('Pond')">Pond Monitoring</button>
-            <button class="btn btn-export" onclick="exportData()">📥 Export XLSX</button>
+            <button class="btn" onclick="switchTable('Ocean')">Ocean Monitoring</button>
+            <button class="btn" style="background:#34495e" onclick="switchTable('Pond')">Pond Monitoring</button>
+            <button class="btn" style="background:#27ae60; float: right;" onclick="downloadData()">📥 Export XLSX</button>
         </div>
 
         <div class="card">
-            <h3 id="tableTitle">Monitoring Data</h3>
+            <h3 id="tableTitle">Ocean Monitoring Data</h3>
             <div style="overflow-x: auto;">
-                <table id="dataTable">
-                    <thead><tr id="tableHeader"></tr></thead>
-                    <tbody id="tableBody"></tbody>
+                <table>
+                    <thead><tr id="hRow"></tr></thead>
+                    <tbody id="bRow"></tbody>
                 </table>
             </div>
         </div>
@@ -63,30 +63,32 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     <script>
-        let currentProject = 'Ocean';
+        let currentP = 'Ocean';
         const map = L.map('map').setView([17.3850, 78.4867], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // Detect User Location
-        map.locate({setView: true, maxZoom: 13});
-        map.on('locationfound', e => L.marker(e.latlng).addTo(map).bindPopup("You are here").openPopup());
+        function getLocation() {
+            navigator.geolocation.getCurrentPosition(p => {
+                const { latitude, longitude } = p.coords;
+                document.getElementById('latDisp').value = latitude;
+                document.getElementById('lonDisp').value = longitude;
+                map.setView([latitude, longitude], 14);
+                L.marker([latitude, longitude]).addTo(map).bindPopup("Current Location").openPopup();
+            });
+        }
 
-        async function loadData(project) {
-            currentProject = project;
-            document.getElementById('tableTitle').innerText = project + " Data Table";
-            const res = await fetch(`/api/data?project=${project}`);
+        async function switchTable(p) {
+            currentP = p;
+            document.getElementById('tableTitle').innerText = p + " Monitoring Data";
+            const res = await fetch(`/api/data?project=${p}`);
             const data = await res.json();
             
-            const header = document.getElementById('tableHeader');
-            const body = document.getElementById('tableBody');
-            
-            // Step 3: Specific Table Columns
-            const cols = project === 'Ocean' 
-                ? ['Date', 'Time', 'Water Type', 'Latitude', 'Longitude', 'PinID', 'pH', 'TDS', 'Temperature', 'Image']
-                : ['Date', 'Time', 'Water Type', 'Latitude', 'Longitude', 'Pin ID', 'Temperature', 'pH', 'DO', 'TDS', 'Image'];
-            
-            header.innerHTML = cols.map(c => `<th>${c}</th>`).join('');
-            body.innerHTML = data.map(r => `
+            const cols = p === 'Ocean' 
+                ? ['Date', 'Time', 'Water Type', 'Lat', 'Lon', 'PinID', 'pH', 'TDS', 'Temp', 'Image']
+                : ['Date', 'Time', 'Water Type', 'Lat', 'Lon', 'Pin ID', 'Temp', 'pH', 'DO', 'TDS', 'Image'];
+
+            document.getElementById('hRow').innerHTML = cols.map(c => `<th>${c}</th>`).join('');
+            document.getElementById('bRow').innerHTML = data.map(r => `
                 <tr>
                     <td>${r.timestamp.split('T')[0]}</td>
                     <td>${r.timestamp.split('T')[1].split('.')[0]}</td>
@@ -94,16 +96,12 @@
                     <td>${r.latitude.toFixed(4)}</td>
                     <td>${r.longitude.toFixed(4)}</td>
                     <td>${r.pin_id}</td>
-                    ${project === 'Ocean' ? 
-                        `<td>${r.ph}</td><td>${r.tds}</td><td>${r.temperature}</td>` : 
-                        `<td>${r.temperature}</td><td>${r.ph}</td><td>${r.do}</td><td>${r.tds}</td>`
-                    }
+                    <td>${r.ph}</td><td>${r.tds}</td><td>${r.temperature}</td>
                     <td><a href="${r.image_url}" target="_blank">View</a></td>
-                </tr>
-            `).join('');
+                </tr>`).join('');
         }
-        function exportData() { window.location.href = `/export/${currentProject}`; }
-        loadData('Ocean'); 
+        function downloadData() { window.location.href = `/export/${currentP}`; }
+        switchTable('Ocean');
     </script>
 </body>
 </html>

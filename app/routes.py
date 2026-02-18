@@ -114,3 +114,31 @@ def export_excel(project):
 def logout():
     session.clear()
     return redirect(url_for('main.login'))
+
+import base64
+
+# ... existing code ...
+
+@main_bp.route('/image/<int:record_id>')
+def get_image(record_id):
+    # Find the record
+    record = WaterData.query.get(record_id)
+    
+    if record and record.image_path:
+        # If the data is stored as a Base64 string in the DB
+        # We strip any header like "data:image/jpeg;base64," if it exists
+        image_data = record.image_path
+        if "," in image_data:
+            image_data = image_data.split(",")[1]
+            
+        # Decode and serve
+        img_bytes = base64.b64decode(image_data)
+        return send_file(
+            BytesIO(img_bytes),
+            mimetype='image/jpeg',
+            as_attachment=False,
+            download_name=f"image_{record_id}.jpg"
+        )
+    
+    return "Image not found", 404
+    

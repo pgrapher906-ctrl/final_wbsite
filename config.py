@@ -1,6 +1,7 @@
 import os
 
 class Config:
+    # Fix Render's postgres:// vs postgresql:// requirement
     uri = os.environ.get("DATABASE_URL")
     if uri and uri.startswith("postgres://"):
         uri = uri.replace("postgres://", "postgresql://", 1)

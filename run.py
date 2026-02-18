@@ -54,3 +54,21 @@ def seed_db():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
+@app.cli.command("create-admin")
+def create_admin():
+    """Creates a professional admin user"""
+    from app.models import User
+    
+    # Check if admin already exists
+    if User.query.filter_by(username='admin').first():
+        print("Admin user already exists.")
+        return
+
+    admin = User(username='admin')
+    admin.set_password('admin123') # You can change this password
+    db.session.add(admin)
+    db.session.commit()
+    print("✅ Admin account created!")
+    print("Username: admin")
+    print("Password: admin123")

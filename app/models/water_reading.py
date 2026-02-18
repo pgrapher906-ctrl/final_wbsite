@@ -15,9 +15,7 @@ class WaterData(db.Model):
     ph = db.Column(db.Numeric(4, 2))
     tds = db.Column(db.Float)
     do = db.Column(db.Float)
-
-    # Stores the Base64 image text
-    image_path = db.Column(db.Text)
+    image_path = db.Column(db.Text) # Stores Base64 string
 
     def to_dict(self):
         return {

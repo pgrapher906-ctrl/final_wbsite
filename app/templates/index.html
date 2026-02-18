@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AquaFlow | NRSC Monitoring</title>
+    <title>NRSC AquaFlow | Monitoring Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <style>
         :root { --nrsc-blue: #0A3D62; --nrsc-teal: #1ABC9C; --bg: #F4F6F9; }
@@ -25,48 +25,36 @@
         <div style="font-weight: bold; font-size: 1.4rem;">🛰️ NRSC AquaFlow Dashboard</div>
         <div>👤 {{ session.username }} | <a href="/logout" style="color: white; text-decoration: none;">Logout</a></div>
     </nav>
-
     <div class="container">
         <div class="stats-grid">
-            <div class="stat-card"><small>Status</small><div style="font-size: 1.2rem; font-weight: bold; color: #27ae60;">Online</div></div>
+            <div class="stat-card"><small>Status</small><div style="font-size: 1.2rem; font-weight: bold; color: #27ae60;">Active Online</div></div>
             <div class="stat-card"><small>Latest Lat</small><div id="lat" style="font-size: 1.2rem; font-weight: bold;">--</div></div>
             <div class="stat-card"><small>Latest Lon</small><div id="lon" style="font-size: 1.2rem; font-weight: bold;">--</div></div>
         </div>
-
         <div class="card">
-            <h3>Geospatial Distribution <button class="btn-action" style="font-size: 0.7rem;" onclick="locate()">📍 My Location</button></h3>
+            <h3>Geospatial Distribution</h3>
             <div id="map"></div>
         </div>
-
         <div class="card">
             <h3>Monitoring Logs <button class="btn-action" style="float:right; font-size: 0.8rem;" onclick="exportXLS()">📥 Export XLSX</button></h3>
             <div style="overflow-x: auto;">
-                <table>
-                    <thead><tr id="thead"></tr></thead>
-                    <tbody id="tbody"></tbody>
-                </table>
+                <table><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table>
             </div>
         </div>
     </div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     <script>
         const map = L.map('map').setView([20.59, 78.96], 5);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
         async function loadData() {
             const res = await fetch('/api/data?project=Ocean');
             const data = await res.json();
-            
             if(data.length > 0) {
-                document.getElementById('lat').innerText = data[0].latitude.toFixed(4);
-                document.getElementById('lon').innerText = data[0].longitude.toFixed(4);
+                document.getElementById('lat').innerText = data[0].latitude;
+                document.getElementById('lon').innerText = data[0].longitude;
                 data.forEach(r => L.marker([r.latitude, r.longitude]).addTo(map).bindPopup(`pH: ${r.ph}`));
             }
-
-            const cols = ['timestamp', 'water_type', 'latitude', 'longitude', 'ph', 'tds', 'temperature', 'has_image'];
             const labels = ['Time', 'Type', 'Lat', 'Lon', 'pH', 'TDS', 'Temp', 'Photo'];
-            
             document.getElementById('thead').innerHTML = labels.map(l => `<th>${l}</th>`).join('');
             document.getElementById('tbody').innerHTML = data.map(r => `
                 <tr>
@@ -78,11 +66,9 @@
                     <td>${r.tds}</td>
                     <td>${r.temperature}°C</td>
                     <td>${r.has_image ? `<a href="/image/${r.id}" target="_blank" class="btn-action">View</a>` : 'None'}</td>
-                </tr>
-            `).join('');
+                </tr>`).join('');
         }
         function exportXLS() { window.location.href = '/export/Ocean'; }
-        function locate() { navigator.geolocation.getCurrentPosition(p => map.setView([p.coords.latitude, p.coords.longitude], 12)); }
         loadData();
     </script>
 </body>

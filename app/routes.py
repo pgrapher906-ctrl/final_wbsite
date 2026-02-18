@@ -1,7 +1,7 @@
 import pandas as pd
 import base64
 from io import BytesIO
-from flask import Blueprint, render_template, request, session, redirect, url_for, send_file, jsonify, flash
+from flask import Blueprint, render_template, request, session, redirect, url_for, send_file, jsonify
 from app import db
 from app.models.user import User
 from app.models.water_reading import WaterData
@@ -19,29 +19,27 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- Registration (Fixed: Prevents 500 error on duplicate email) ---
+# --- Registration (Fixed duplicate email crash) ---
 @main_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         email = request.form.get('email')
         username = request.form.get('username')
-        
         user_exists = User.query.filter((User.email == email) | (User.username == username)).first()
         if user_exists:
-            return render_template('register.html', error="Email or Username already exists.")
-             
+            return render_template('register.html', error="User already exists.")
         try:
             user = User(username=username, email=email)
             user.set_password(request.form.get('password'))
             db.session.add(user)
             db.session.commit()
             return redirect(url_for('main.login'))
-        except Exception:
+        except:
             db.session.rollback()
-            return render_template('register.html', error="Registration failed. Try again.")
+            return render_template('register.html', error="Registration failed.")
     return render_template('register.html')
 
-# --- Login (Fixed: Modern Hash Support) ---
+# --- Login ---
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -60,8 +58,7 @@ def login():
 
 @main_bp.route('/')
 @login_required
-def index():
-    return render_template('index.html')
+def index(): return render_template('index.html')
 
 @main_bp.route('/api/data')
 @login_required
@@ -81,15 +78,12 @@ def get_image(record_id):
     if record and record.image_path:
         try:
             image_text = record.image_path
-            if "," in image_text:
-                image_text = image_text.split(",")[1]
-            img_bytes = base64.b64decode(image_text)
-            return send_file(BytesIO(img_bytes), mimetype='image/jpeg')
-        except:
-            return "Image Error", 500
+            if "," in image_text: image_text = image_text.split(",")[1]
+            return send_file(BytesIO(base64.b64decode(image_text)), mimetype='image/jpeg')
+        except: return "Error", 500
     return "Not found", 404
 
-# --- Excel Export (Fixed for Vercel/Memory Efficiency) ---
+# --- Excel Export (Fixed for Vercel Memory) ---
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
@@ -97,19 +91,11 @@ def export_excel(project):
         readings = WaterData.query.filter(WaterData.water_type.ilike('%Ocean%')).all()
     else:
         readings = WaterData.query.filter(WaterData.water_type.ilike('%Pond%')).all()
-
     wb = Workbook()
     ws = wb.active
-    ws.title = "AquaFlow Monitoring"
     ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'TDS', 'Temp', 'DO'])
-
     for r in readings:
-        ws.append([
-            r.id, r.timestamp.strftime('%Y-%m-%d %H:%M') if r.timestamp else '',
-            r.latitude, r.longitude, r.water_type, 
-            float(r.ph) if r.ph else 0.0, r.tds, r.temperature, r.do
-        ])
-
+        ws.append([r.id, r.timestamp.strftime('%Y-%m-%d %H:%M') if r.timestamp else '', r.latitude, r.longitude, r.water_type, float(r.ph) if r.ph else 0, r.tds, r.temperature, r.do])
     output = BytesIO()
     wb.save(output)
     output.seek(0)

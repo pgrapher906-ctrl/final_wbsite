@@ -1,51 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NRSC Water Quality System</title>
+    <title>NRSC Water Quality</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <style>
         :root { --bg: #F4F6F9; --primary: #0A3D62; --teal: #1ABC9C; }
-        body { background: var(--bg); font-family: sans-serif; margin: 0; }
-        .navbar { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; }
-        .container { padding: 20px; max-width: 1200px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .btn { background: var(--teal); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        body { background: var(--bg); font-family: 'Segoe UI', sans-serif; margin: 0; }
+        .navbar { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .container { padding: 20px; max-width: 1300px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn { background: var(--teal); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-sec { background: #34495e; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
         th { background: var(--primary); color: white; padding: 12px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #ddd; }
-        #map { height: 300px; width: 100%; border-radius: 8px; }
-        .info-tooltip { cursor: help; position: relative; display: inline-block; }
-        .info-tooltip:hover::after {
-            content: "Visits: {{ session.visit_count }} | Last Login: {{ session.last_login }}";
-            position: absolute; background: #333; padding: 8px; border-radius: 4px; width: 250px; top: 25px; right: 0; z-index: 100;
+        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+        #map { height: 350px; width: 100%; border-radius: 8px; border: 1px solid #ccc; }
+        .info-icon { cursor: pointer; color: var(--teal); font-weight: bold; margin-left: 10px; }
+        .info-icon:hover::after {
+            content: "Visits: {{ session.visit_count }} | Last: {{ session.last_login }}";
+            position: absolute; background: #333; color: white; padding: 8px; border-radius: 4px; top: 50px; right: 20px; z-index: 1000;
         }
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <div><strong>NRSC SMART KIOSK</strong></div>
+        <div style="font-size: 1.2rem;">🌊 <strong>NRSC Smart Kiosk</strong></div>
         <div>
-            <span>Welcome, {{ session.username }}</span>
-            <span class="info-tooltip"> ℹ️ </span>
-            <a href="/logout" style="color: white; margin-left: 15px;">Logout</a>
+            <span>Welcome, <strong>{{ session.username }}</strong></span>
+            <span class="info-icon">ℹ️</span>
+            <a href="/logout" style="color: white; margin-left: 20px; text-decoration: none;">Logout</a>
         </div>
     </nav>
 
     <div class="container">
         <div class="card">
-            <h3>Step 1: Detect Location</h3>
+            <h3>Step 1: Detect Location Filter</h3>
             <div id="map"></div>
         </div>
 
         <div class="card">
             <h3>Step 2: Project Selection</h3>
             <button class="btn" onclick="loadData('Ocean')">Ocean Monitoring</button>
-            <button class="btn" style="background:#34495e" onclick="loadData('Pond')">Pond Monitoring</button>
-            <button class="btn" style="background:#27ae60; float: right;" onclick="exportExcel()">Export Excel</button>
+            <button class="btn btn-sec" onclick="loadData('Pond')">Pond Monitoring</button>
+            <button class="btn" style="background:#27ae60; float: right;" onclick="exportExcel()">📥 Download XLSX</button>
         </div>
 
         <div class="card">
-            <h3 id="tableTitle">Ocean Data Table</h3>
+            <h3 id="tableTitle">Ocean Data Display</h3>
             <div style="overflow-x: auto;">
                 <table id="dataTable">
                     <thead><tr id="tableHeader"></tr></thead>
@@ -61,7 +62,6 @@
         const map = L.map('map').setView([17.3850, 78.4867], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // Detect User Location
         navigator.geolocation.getCurrentPosition(p => {
             const { latitude, longitude } = p.coords;
             map.setView([latitude, longitude], 13);
@@ -70,34 +70,28 @@
 
         async function loadData(project) {
             currentProject = project;
-            document.getElementById('tableTitle').innerText = project + " Data Table";
+            document.getElementById('tableTitle').innerText = `${project} Monitoring Table`;
             const res = await fetch(`/api/data?project=${project}`);
             const data = await res.json();
             
-            const headerRow = document.getElementById('tableHeader');
+            const header = document.getElementById('tableHeader');
             const cols = project === 'Ocean' 
-                ? ['Date', 'Time', 'Lat', 'Lon', 'Pin ID', 'Chlorophyll', 'TA', 'DIC', 'pH', 'TDS', 'Temp', 'Image']
-                : ['Date', 'Time', 'Lat', 'Lon', 'Pin ID', 'Temp', 'pH', 'DO', 'TDS', 'Chlorophyll', 'Image'];
+                ? ['Date', 'Lat', 'Lon', 'Pin ID', 'Chlorophyll', 'TA', 'DIC', 'pH', 'TDS', 'Temp', 'Image']
+                : ['Date', 'Lat', 'Lon', 'Pin ID', 'Temp', 'pH', 'DO', 'TDS', 'Chlorophyll', 'Image'];
             
-            headerRow.innerHTML = cols.map(c => `<th>${c}</th>`).join('');
-            
+            header.innerHTML = cols.map(c => `<th>${c}</th>`).join('');
             const body = document.getElementById('tableBody');
             body.innerHTML = data.map(r => `
                 <tr>
-                    <td>${r.date}</td><td>${r.time}</td><td>${r.latitude}</td><td>${r.longitude}</td>
+                    <td>${r.timestamp.split('T')[0]}</td><td>${r.latitude.toFixed(4)}</td><td>${r.longitude.toFixed(4)}</td>
                     <td>${r.pin_id}</td><td>${project === 'Ocean' ? r.chlorophyll : r.temperature}</td>
                     <td>${project === 'Ocean' ? r.ta : r.ph}</td><td>${project === 'Ocean' ? r.dic : r.do}</td>
                     <td>${r.ph}</td><td>${r.tds}</td><td>${r.temperature}</td>
-                    <td><a href="${r.image}" target="_blank">View</a></td>
+                    <td><a href="${r.image_url}" target="_blank">View</a></td>
                 </tr>
             `).join('');
         }
-
-        function exportExcel() {
-            window.location.href = `/export/${currentProject}`;
-        }
-
-        // Initial Load
+        function exportExcel() { window.location.href = `/export/${currentProject}`; }
         loadData('Ocean');
     </script>
 </body>

@@ -16,10 +16,12 @@ def login():
             user.last_login = datetime.utcnow()
             db.session.commit()
             
-            session['user_id'] = user.id
-            session['username'] = user.username
-            session['visit_count'] = user.visit_count
-            session['last_login'] = user.last_login.strftime('%Y-%m-%d %H:%M:%S')
+            session.update({
+                'user_id': user.id,
+                'username': user.username,
+                'visit_count': user.visit_count,
+                'last_login': user.last_login.strftime('%Y-%m-%d %H:%M')
+            })
             return redirect(url_for('main.index'))
     return render_template('login.html')
 
@@ -29,20 +31,23 @@ def index():
     return render_template('index.html')
 
 @main_bp.route('/export/<project>')
-def export_data(project):
+def export_excel(project):
     readings = WaterReading.query.filter_by(project_type=project).all()
-    data = [r.to_dict() for r in readings]
-    df = pd.DataFrame(data)
+    df = pd.DataFrame([r.to_dict() for r in readings])
     
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Water Data')
+        df.to_excel(writer, index=False)
     output.seek(0)
-    
-    return send_file(output, as_attachment=True, download_name=f"{project}_Monitoring.xlsx")
+    return send_file(output, as_attachment=True, download_name=f"NRSC_{project}_Data.xlsx")
 
 @main_bp.route('/api/data')
 def get_data():
     project = request.args.get('project', 'Ocean')
     readings = WaterReading.query.filter_by(project_type=project).all()
     return jsonify([r.to_dict() for r in readings])
+
+@main_bp.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('main.login'))

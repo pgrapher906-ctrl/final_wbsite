@@ -1,12 +1,11 @@
-import os
-import pandas as pd
-from io import BytesIO
-from flask import Blueprint, render_template, request, session, redirect, url_for, send_file, jsonify
+from flask import Blueprint, render_template, request, session, redirect, url_for, jsonify, send_file
 from app import db
 from app.models.user import User
 from app.models.water_reading import WaterReading
 from datetime import datetime
 from functools import wraps
+import pandas as pd
+from io import BytesIO
 
 main_bp = Blueprint('main', __name__)
 
@@ -17,8 +16,6 @@ def login_required(f):
             return redirect(url_for('main.login'))
         return f(*args, **kwargs)
     return decorated_function
-
-# ==================== Authentication Routes ====================
 
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -31,7 +28,6 @@ def login():
             user.visit_count += 1
             user.last_login = datetime.utcnow()
             db.session.commit()
-            
             session.update({
                 'user_id': user.id, 
                 'username': user.username,
@@ -40,42 +36,28 @@ def login():
             })
             return redirect(url_for('main.index'))
         return render_template('login.html', error="Invalid username or password")
-            
     return render_template('login.html')
 
 @main_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
-        email = request.form.get('email') # This was missing in your form
+        email = request.form.get('email')
         password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-
-        if password != confirm_password:
-            return render_template('register.html', error="Passwords do not match")
-
+        
         if User.query.filter_by(username=username).first():
             return render_template('register.html', error="Username already exists")
         
         new_user = User(username=username, email=email)
         new_user.set_password(password)
-        
         try:
             db.session.add(new_user)
             db.session.commit()
             return redirect(url_for('main.login'))
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            return render_template('register.html', error="Registration failed. Ensure email is unique.")
-            
+            return render_template('register.html', error="Registration failed.")
     return render_template('register.html')
-
-@main_bp.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('main.login'))
-
-# ==================== Dashboard Routes ====================
 
 @main_bp.route('/')
 @login_required
@@ -88,14 +70,3 @@ def get_data():
     project = request.args.get('project', 'Ocean')
     readings = WaterReading.query.filter_by(project_type=project).all()
     return jsonify([r.to_dict() for r in readings])
-
-@main_bp.route('/export/<project>')
-@login_required
-def export_excel(project):
-    readings = WaterReading.query.filter_by(project_type=project).all()
-    df = pd.DataFrame([r.to_dict() for r in readings])
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False)
-    output.seek(0)
-    return send_file(output, as_attachment=True, download_name=f"NRSC_{project}_Data.xlsx")

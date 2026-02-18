@@ -1,27 +1,48 @@
 from app import db
-from datetime import datetime
+from sqlalchemy.sql import func
 
-class WaterReading(db.Model):
-    __tablename__ = 'water_readings' # Must match your Entry Site's table name
+# This model must match your Data Entry website EXACTLY
+class WaterData(db.Model):
+    __tablename__ = "water_data"  # MATCHED: The table name from your first website
 
     id = db.Column(db.Integer, primary_key=True)
-    project_type = db.Column(db.String(50), nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Location & ID
-    latitude = db.Column(db.Float)
-    longitude = db.Column(db.Float)
-    pin_id = db.Column(db.String(50))
-    image_url = db.Column(db.String(500))
+    # We map user_id even if we don't use it, to avoid SQLAlchemy errors
+    user_id = db.Column(db.Integer, nullable=True) 
 
-    # All Sensors (Ocean + Pond)
-    ph = db.Column(db.Float)
-    tds = db.Column(db.Float)
+    # MATCHED: Auto-timestamp
+    timestamp = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+    # MATCHED: Location
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+
+    # MATCHED: Identifiers
+    water_type = db.Column(db.String(100), nullable=False) # Was 'project_type'
+    pin_id = db.Column(db.String(100), nullable=False)
+
+    # MATCHED: Sensor Data
     temperature = db.Column(db.Float)
-    do = db.Column(db.Float)          # Pond Specific
-    chlorophyll = db.Column(db.Float) # Pond Specific
-    ta = db.Column(db.Float)          # Ocean Specific
-    dic = db.Column(db.Float)         # Ocean Specific
+    ph = db.Column(db.Numeric(4, 2))
+    tds = db.Column(db.Float)
+    do = db.Column(db.Float) # Only 'do' exists in your source model
+
+    # MATCHED: Image path
+    image_path = db.Column(db.String(300)) # Was 'image_url'
 
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        # Helper to convert data to JSON
+        return {
+            'id': self.id,
+            'timestamp': self.timestamp,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'water_type': self.water_type,
+            'pin_id': self.pin_id,
+            'temperature': self.temperature,
+            'ph': float(self.ph) if self.ph else 0.0, # Convert Decimal to float
+            'tds': self.tds,
+            'do': self.do,
+            'image_path': self.image_path
+        }
+

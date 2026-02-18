@@ -1,12 +1,11 @@
 import os
 
 class Config:
-    # ---------------------------------------------------------
-    # REPLACE THE LINE BELOW WITH YOUR NEON LINK
-    # ---------------------------------------------------------
+    # We are pasting the link directly here to stop the 502 crash
     uri = "postgresql://neondb_owner:npg_qna54HgPVOvb@ep-flat-wind-aiezn0bh-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require"
     
-    # This fixes a compatibility issue with Render and Neon
+    # Render requires 'postgresql://' but Neon sometimes gives 'postgres://'
+    # This code fixes that automatically
     if uri and uri.startswith("postgres://"):
         uri = uri.replace("postgres://", "postgresql://", 1)
     

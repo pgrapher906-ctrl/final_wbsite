@@ -1,11 +1,11 @@
 import os
 
 class Config:
-    # Handle Neon/Render postgres:// vs postgresql://
-    db_url = os.environ.get("DATABASE_URL")
-    if db_url and db_url.startswith("postgres://"):
-        db_url = db_url.replace("postgres://", "postgresql://", 1)
+    # Fix Render's postgres:// vs postgresql:// requirement
+    uri = os.environ.get("DATABASE_URL")
+    if uri and uri.startswith("postgres://"):
+        uri = uri.replace("postgres://", "postgresql://", 1)
     
-    SQLALCHEMY_DATABASE_URI = db_url
+    SQLALCHEMY_DATABASE_URI = uri
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = os.environ.get("SECRET_KEY", "nrsc-secret-2026")
+    SECRET_KEY = os.environ.get("SECRET_KEY", "nrsc_water_2026_secure")

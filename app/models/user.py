@@ -6,6 +6,7 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(30), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     visit_count = db.Column(db.Integer, default=0)
     last_login = db.Column(db.DateTime)
@@ -19,36 +20,21 @@ class User(db.Model):
 class WaterReading(db.Model):
     __tablename__ = 'water_readings'
     id = db.Column(db.Integer, primary_key=True)
-    project_type = db.Column(db.String(20), nullable=False)  # 'Ocean' or 'Pond'
+    project_type = db.Column(db.String(20), nullable=False) # 'Ocean' or 'Pond'
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     pin_id = db.Column(db.String(50))
     image_url = db.Column(db.String(255))
     
-    # Shared & Specific Parameters
+    # Parameters
     ph = db.Column(db.Float)
     tds = db.Column(db.Float)
     temperature = db.Column(db.Float)
     chlorophyll = db.Column(db.Float)
-    ta = db.Column(db.Float)  # Ocean
-    dic = db.Column(db.Float) # Ocean
-    do = db.Column(db.Float)  # Pond
+    ta = db.Column(db.Float) # Ocean Specific
+    dic = db.Column(db.Float) # Ocean Specific
+    do = db.Column(db.Float) # Pond Specific
 
     def to_dict(self):
-        return {
-            "date": self.timestamp.strftime('%Y-%m-%d'),
-            "time": self.timestamp.strftime('%H:%M:%S'),
-            "project_type": self.project_type,
-            "latitude": self.latitude,
-            "longitude": self.longitude,
-            "pin_id": self.pin_id,
-            "ph": self.ph,
-            "tds": self.tds,
-            "temperature": self.temperature,
-            "chlorophyll": self.chlorophyll,
-            "ta": self.ta,
-            "dic": self.dic,
-            "do": self.do,
-            "image": self.image_url
-        }
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}

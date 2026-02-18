@@ -1,9 +1,10 @@
 import pandas as pd
+import base64
 from io import BytesIO
 from flask import Blueprint, render_template, request, session, redirect, url_for, send_file, jsonify
 from app import db
 from app.models.user import User
-from app.models.water_reading import WaterData  # UPDATED IMPORT
+from app.models.water_reading import WaterData
 from datetime import datetime
 from functools import wraps
 from sqlalchemy import or_
@@ -21,7 +22,6 @@ def login_required(f):
 @main_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        # Check if user exists using the User model (which links to 'users' table)
         if User.query.filter_by(username=request.form.get('username')).first():
              return render_template('register.html', error="User already exists")
              
@@ -32,14 +32,14 @@ def register():
         return redirect(url_for('main.login'))
     return render_template('register.html')
 
-# --- Login ---
+# --- Login & Tracking ---
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
             u.visit_count += 1
-            u.last_login = datetime.now() # Simplified time
+            u.last_login = datetime.now()
             db.session.commit()
             session.update({
                 'user_id': u.id, 'username': u.username,
@@ -55,13 +55,12 @@ def login():
 def index():
     return render_template('index.html')
 
-# --- DATA FETCHING (FIXED) ---
+# --- DATA FETCHING ---
 @main_bp.route('/api/data')
 @login_required
 def get_data():
     proj = request.args.get('project', 'Ocean')
     
-    # We use 'WaterData' model and 'water_type' column now
     if proj == 'Ocean':
         readings = WaterData.query.filter(
             or_(
@@ -82,17 +81,57 @@ def get_data():
         
     return jsonify([r.to_dict() for r in readings])
 
+# --- IMAGE SERVING ROUTE (NEW) ---
+@main_bp.route('/image/<int:record_id>')
+@login_required
+def get_image(record_id):
+    # Find the record by ID
+    record = WaterData.query.get(record_id)
+    
+    # Check if record exists and has image data
+    if record and record.image_path:
+        try:
+            image_data = record.image_path
+            # If stored as data URI (e.g., "data:image/jpeg;base64,..."), strip the header
+            if "," in image_data:
+                image_data = image_data.split(",")[1]
+                
+            # Decode Base64 to binary
+            img_bytes = base64.b64decode(image_data)
+            
+            return send_file(
+                BytesIO(img_bytes),
+                mimetype='image/jpeg',
+                as_attachment=False,
+                download_name=f"image_{record_id}.jpg"
+            )
+        except Exception as e:
+            print(f"Error decoding image: {e}")
+            return "Image Error", 500
+    
+    return "Image not found", 404
+
 # --- Excel Export ---
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
+    # Matches the same filter logic as get_data
     if project == 'Ocean':
         readings = WaterData.query.filter(
-            or_(WaterData.water_type.ilike('%Ocean%'), WaterData.water_type.ilike('%Sea%'))
+            or_(
+                WaterData.water_type.ilike('%Ocean%'),
+                WaterData.water_type.ilike('%Sea%'),
+                WaterData.water_type.ilike('%Marine%'),
+                WaterData.water_type.ilike('%Coastal%')
+            )
         ).all()
     else:
         readings = WaterData.query.filter(
-            or_(WaterData.water_type.ilike('%Pond%'), WaterData.water_type.ilike('%Ground%'))
+            or_(
+                WaterData.water_type.ilike('%Pond%'),
+                WaterData.water_type.ilike('%Drinking%'),
+                WaterData.water_type.ilike('%Ground%')
+            )
         ).all()
 
     data = []
@@ -101,6 +140,10 @@ def export_excel(project):
         if r.timestamp:
             row['Date'] = r.timestamp.strftime('%Y-%m-%d')
             row['Time'] = r.timestamp.strftime('%H:%M:%S')
+        
+        # Clean up image field for Excel (too long text)
+        row['image_path'] = "Image Available" if row.get('image_path') else "No Image"
+        
         data.append(row)
         
     df = pd.DataFrame(data)
@@ -110,35 +153,7 @@ def export_excel(project):
     output.seek(0)
     return send_file(output, as_attachment=True, download_name=f"AquaFlow_{project}.xlsx")
 
-import base64
-
-# ... existing code ...
-
-@main_bp.route('/image/<int:record_id>')
-def get_image(record_id):
-    # Find the record
-    record = WaterData.query.get(record_id)
-    
-    if record and record.image_path:
-        # If the data is stored as a Base64 string in the DB
-        # We strip any header like "data:image/jpeg;base64," if it exists
-        image_data = record.image_path
-        if "," in image_data:
-            image_data = image_data.split(",")[1]
-            
-        # Decode and serve
-        img_bytes = base64.b64decode(image_data)
-        return send_file(
-            BytesIO(img_bytes),
-            mimetype='image/jpeg',
-            as_attachment=False,
-            download_name=f"image_{record_id}.jpg"
-        )
-    
-    return "Image not found", 404
-
 @main_bp.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('main.login'))
-

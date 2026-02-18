@@ -1,40 +1,54 @@
 from app import db
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(30), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    visit_count = db.Column(db.Integer, default=0)
+    last_login = db.Column(db.DateTime)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 class WaterReading(db.Model):
-    """Model for water quality readings from IoT sensors"""
     __tablename__ = 'water_readings'
-    
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
-    latitude = db.Column(db.Float, nullable=False)
-    longitude = db.Column(db.Float, nullable=False)
-    water_type = db.Column(db.String(50), nullable=False)  # drinking, groundwater, ocean
-    chlorophyll = db.Column(db.Float, nullable=True)  # mg/L
-    pigments = db.Column(db.Float, nullable=True)  # mg/L
-    total_alkalinity = db.Column(db.Float, nullable=True)  # mg/L as CaCO3
-    dic = db.Column(db.Float, nullable=True)  # Dissolved Inorganic Carbon, mmol/L
-    temperature = db.Column(db.Float, nullable=True)  # Celsius
-    sensor_id = db.Column(db.String(100), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    project_type = db.Column(db.String(20), nullable=False)  # 'Ocean' or 'Pond'
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
+    pin_id = db.Column(db.String(50))
+    image_url = db.Column(db.String(255))
     
+    # Shared & Specific Parameters
+    ph = db.Column(db.Float)
+    tds = db.Column(db.Float)
+    temperature = db.Column(db.Float)
+    chlorophyll = db.Column(db.Float)
+    ta = db.Column(db.Float)  # Ocean
+    dic = db.Column(db.Float) # Ocean
+    do = db.Column(db.Float)  # Pond
+
     def to_dict(self):
-        """Convert model to dictionary"""
         return {
-            'id': self.id,
-            'timestamp': self.timestamp.isoformat(),
-            'date': self.timestamp.strftime('%Y-%m-%d'),
-            'time': self.timestamp.strftime('%H:%M:%S'),
-            'latitude': round(self.latitude, 6),
-            'longitude': round(self.longitude, 6),
-            'water_type': self.water_type,
-            'chlorophyll': self.chlorophyll,
-            'pigments': self.pigments,
-            'total_alkalinity': self.total_alkalinity,
-            'dic': self.dic,
-            'temperature': self.temperature,
-            'sensor_id': self.sensor_id
+            "date": self.timestamp.strftime('%Y-%m-%d'),
+            "time": self.timestamp.strftime('%H:%M:%S'),
+            "project_type": self.project_type,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "pin_id": self.pin_id,
+            "ph": self.ph,
+            "tds": self.tds,
+            "temperature": self.temperature,
+            "chlorophyll": self.chlorophyll,
+            "ta": self.ta,
+            "dic": self.dic,
+            "do": self.do,
+            "image": self.image_url
         }
-    
-    def __repr__(self):
-        return f'<WaterReading {self.id} - {self.timestamp}>'

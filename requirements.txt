@@ -4,5 +4,5 @@ psycopg2-binary==2.9.6
 pandas>=2.1.0
 openpyxl==3.1.2
 python-dotenv==1.0.0
-gunicorn==20.1.0
-setuptools  # Adding this explicitly helps older build scripts
+gunicorn>=23.0.0
+setuptools

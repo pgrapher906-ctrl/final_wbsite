@@ -1,119 +1,87 @@
-from flask import Blueprint, render_template, redirect, url_for, request, send_file, flash
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import login_user, logout_user, login_required, current_user
-from .models.user import db, User
-from .models.water_reading import WaterReading
 import pandas as pd
 from io import BytesIO
+from flask import Blueprint, render_template, request, session, redirect, url_for, send_file, jsonify
+from app import db
+from app.models.user import User
+from app.models.water_reading import WaterReading
 from datetime import datetime
+from functools import wraps
 
-main = Blueprint('main', __name__)
+main_bp = Blueprint('main', __name__)
 
-# --- Authentication Routes ---
-@main.route('/')
-def index():
-    return redirect(url_for('main.login'))
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session: return redirect(url_for('main.login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
-@main.route('/register', methods=['GET', 'POST'])
+# --- Registration ---
+@main_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        # Check if user exists
-        user = User.query.filter_by(email=email).first()
-        if user:
-            flash('Email already exists')
-            return redirect(url_for('main.register'))
-            
-        new_user = User(
-            username=username, 
-            email=email, 
-            password=generate_password_hash(password, method='sha256')
-        )
-        db.session.add(new_user)
+        user = User(username=request.form.get('username'), email=request.form.get('email'))
+        user.set_password(request.form.get('password'))
+        db.session.add(user)
         db.session.commit()
         return redirect(url_for('main.login'))
-        
     return render_template('register.html')
 
-@main.route('/login', methods=['GET', 'POST'])
+# --- Login & Tracking ---
+@main_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        
-        user = User.query.filter_by(username=username).first()
-        
-        if user and check_password_hash(user.password, password):
-            # Update User Stats
-            user.visit_count += 1
-            user.last_login = datetime.utcnow()
+        u = User.query.filter_by(username=request.form.get('username')).first()
+        if u and u.check_password(request.form.get('password')):
+            # Update tracking stats
+            u.visit_count += 1
+            u.last_login = datetime.utcnow()
             db.session.commit()
             
-            login_user(user)
-            return redirect(url_for('main.dashboard'))
-        else:
-            flash('Invalid login credentials')
-            
+            session.update({
+                'user_id': u.id, 'username': u.username,
+                'visit_count': u.visit_count,
+                'last_login': u.last_login.strftime('%Y-%m-%d %H:%M')
+            })
+            return redirect(url_for('main.index'))
     return render_template('login.html')
 
-@main.route('/logout')
+# --- Dashboard ---
+@main_bp.route('/')
 @login_required
-def logout():
-    logout_user()
-    return redirect(url_for('main.login'))
+def index():
+    return render_template('index.html')
 
-# --- Dashboard & Functional Routes ---
-@main.route('/dashboard')
+# --- Data Fetching ---
+@main_bp.route('/api/data')
 @login_required
-def dashboard():
-    # Default to Ocean if no project selected
-    project_type = request.args.get('project', 'Ocean')
-    
-    # Filter data based on selection
-    readings = WaterReading.query.filter_by(project_type=project_type).all()
-    
-    return render_template('index.html', data=readings, current_project=project_type)
+def get_data():
+    proj = request.args.get('project', 'Ocean')
+    # This fetches the data your OTHER website saved
+    readings = WaterReading.query.filter_by(project_type=proj).all()
+    return jsonify([r.to_dict() for r in readings])
 
-@main.route('/export/<project_type>')
+# --- Excel Export ---
+@main_bp.route('/export/<project>')
 @login_required
-def export_data(project_type):
-    readings = WaterReading.query.filter_by(project_type=project_type).all()
-    
-    if not readings:
-        return redirect(url_for('main.dashboard'))
-
-    # Create DataFrame
-    data_list = []
+def export_excel(project):
+    readings = WaterReading.query.filter_by(project_type=project).all()
+    # Convert DB objects to a list of dicts for Pandas
+    data = []
     for r in readings:
-        row = {
-            'Date': r.date,
-            'Time': r.time,
-            'Type': r.project_type,
-            'Lat': r.lat,
-            'Lon': r.lon,
-            'Pin ID': r.pin_id,
-            'pH': r.ph,
-            'TDS': r.tds,
-            'Temp': r.temp,
-            'Image': r.image_url
-        }
-        if project_type == 'Pond':
-            row['DO'] = r.do
-        data_list.append(row)
-
-    df = pd.DataFrame(data_list)
-    
-    # Export to Excel in memory
+        row = r.to_dict()
+        row['Date'] = r.timestamp.strftime('%Y-%m-%d')
+        row['Time'] = r.timestamp.strftime('%H:%M:%S')
+        data.append(row)
+        
+    df = pd.DataFrame(data)
     output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name=project_type)
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False)
     output.seek(0)
-    
-    return send_file(
-        output, 
-        download_name=f"{project_type}_Data.xlsx", 
-        as_attachment=True
-    )
+    return send_file(output, as_attachment=True, download_name=f"AquaFlow_{project}_Report.xlsx")
+
+@main_bp.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('main.login'))

@@ -89,6 +89,12 @@
             if(data.length > 0) {
                 document.getElementById('last-lat').innerText = data[0].latitude.toFixed(4);
                 document.getElementById('last-lon').innerText = data[0].longitude.toFixed(4);
+                
+                // Add pins to map
+                data.forEach(r => {
+                    L.marker([r.latitude, r.longitude]).addTo(map)
+                    .bindPopup(`Pin: ${r.pin_id}<br>pH: ${r.ph}`);
+                });
             }
 
             const cols = ['timestamp', 'water_type', 'latitude', 'longitude', 'ph', 'tds', 'temperature', 'has_image'];
@@ -110,6 +116,12 @@
         }
 
         function exportExcel() { window.location.href = `/export/Ocean`; }
+        function detectLocation() {
+            if(!navigator.geolocation) return alert("Not supported");
+            navigator.geolocation.getCurrentPosition(pos => {
+                map.setView([pos.coords.latitude, pos.coords.longitude], 13);
+            });
+        }
         loadData('Ocean');
     </script>
 </body>

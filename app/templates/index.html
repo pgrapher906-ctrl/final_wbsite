@@ -1,107 +1,195 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>AquaFlow - Data Viewer</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquaFlow Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --primary: #0A3D62; --teal: #1ABC9C; }
-        body { margin: 0; font-family: sans-serif; background: #f4f7f6; }
-        .navbar { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-        .info-icon { cursor: pointer; position: relative; font-size: 1.2rem; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; }
+        
+        /* Navbar */
+        .navbar { background-color: #ffffff; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .brand { font-size: 24px; font-weight: bold; color: #007bff; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        
+        /* Tooltip Logic */
+        .info-icon { cursor: pointer; position: relative; display: inline-block; font-size: 20px; }
         .info-icon:hover::after {
-            content: "Visit Count: {{ session.visit_count }}\nLast Login: {{ session.last_login }}";
-            position: absolute; right: 0; top: 30px; background: #333; color: white; padding: 10px; border-radius: 5px; white-space: pre; z-index: 1000; font-size: 0.8rem;
+            content: attr(data-tooltip);
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 5px;
+            white-space: nowrap;
+            z-index: 1000;
+            font-size: 12px;
+            margin-top: 5px;
         }
-        .container { padding: 20px; max-width: 1200px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        #map { height: 400px; width: 100%; border-radius: 8px; margin-top: 15px; }
-        .btn { background: var(--teal); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background: var(--primary); color: white; padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #ddd; }
-        .coord-box { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 4px; background: #fafafa; }
+
+        /* Layout */
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h3 { margin-top: 0; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+
+        /* Step 1: Map */
+        .location-controls { display: flex; gap: 10px; margin-bottom: 15px; }
+        input[readonly] { background-color: #e9ecef; border: 1px solid #ced4da; padding: 8px; border-radius: 4px; }
+        #map { height: 350px; width: 100%; border-radius: 8px; }
+
+        /* Step 2: Buttons */
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; color: white; font-weight: 500; display: inline-block; }
+        .btn-teal { background-color: #20c997; } /* Ocean */
+        .btn-blue { background-color: #004085; } /* Pond */
+        .btn-green { background-color: #28a745; float: right; } /* Export */
+        .btn:hover { opacity: 0.9; }
+        .active-ocean { border: 3px solid #1aa179; }
+        .active-pond { border: 3px solid #002752; }
+
+        /* Step 3: Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; color: #495057; }
+        a.view-link { color: #007bff; text-decoration: none; }
+        a.view-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
+
     <nav class="navbar">
-        <div>🌊 AquaFlow Data Center</div>
-        <div style="display: flex; align-items: center; gap: 20px;">
-            <span>👤 {{ session.username }}</span>
-            <span class="info-icon">ℹ️</span>
-            <a href="/logout" style="color: white; text-decoration: none; border: 1px solid white; padding: 5px 10px; border-radius: 4px;">Logout</a>
+        <div class="brand">AquaFlow</div>
+        <div class="user-info">
+            <span>Welcome, {{ current_user.username }}</span>
+            <span class="info-icon" data-tooltip="Visit Count: {{ current_user.visit_count }} | Last Login: {{ current_user.last_login.strftime('%Y-%m-%d %H:%M') }}">ℹ️</span>
+            <a href="{{ url_for('main.logout') }}" style="color: #dc3545; text-decoration: none;">Logout</a>
         </div>
     </nav>
 
     <div class="container">
+        
         <div class="card">
-            <h3>Step 1 – Detect Location</h3>
-            <button class="btn" onclick="getLocation()">Detect Location</button>
-            <div style="display: flex; gap: 15px; margin-top: 15px;">
-                <input type="text" id="latDisp" class="coord-box" placeholder="Latitude" readonly>
-                <input type="text" id="lonDisp" class="coord-box" placeholder="Longitude" readonly>
+            <h3>Step 1: Location Detection</h3>
+            <div class="location-controls">
+                <button class="btn" style="background-color: #6c757d;" onclick="detectLocation()">📍 Detect Location</button>
+                <input type="text" id="lat" placeholder="Latitude" readonly>
+                <input type="text" id="lon" placeholder="Longitude" readonly>
             </div>
             <div id="map"></div>
         </div>
 
         <div class="card">
-            <h3>Step 2 – Project Selection</h3>
-            <button class="btn" onclick="switchTable('Ocean')">Ocean Monitoring</button>
-            <button class="btn" style="background:#34495e" onclick="switchTable('Pond')">Pond Monitoring</button>
-            <button class="btn" style="background:#27ae60; float: right;" onclick="downloadData()">📥 Export XLSX</button>
+            <h3>Step 2: Project Selection</h3>
+            <div>
+                <a href="{{ url_for('main.dashboard', project='Ocean') }}" class="btn btn-teal {% if current_project == 'Ocean' %}active-ocean{% endif %}">Ocean Monitoring</a>
+                <a href="{{ url_for('main.dashboard', project='Pond') }}" class="btn btn-blue {% if current_project == 'Pond' %}active-pond{% endif %}">Pond Monitoring</a>
+                
+                <a href="{{ url_for('main.export_data', project_type=current_project) }}" class="btn btn-green">📥 Export XLSX</a>
+            </div>
         </div>
 
         <div class="card">
-            <h3 id="tableTitle">Ocean Monitoring Data</h3>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead><tr id="hRow"></tr></thead>
-                    <tbody id="bRow"></tbody>
-                </table>
-            </div>
+            <h3>Step 3: Data Table ({{ current_project }})</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th>Lat</th>
+                        <th>Lon</th>
+                        <th>Pin ID</th>
+                        
+                        {% if current_project == 'Ocean' %}
+                            <th>pH</th>
+                            <th>TDS</th>
+                            <th>Temp</th>
+                        {% else %}
+                            <th>Temp</th>
+                            <th>pH</th>
+                            <th>DO</th>
+                            <th>TDS</th>
+                        {% endif %}
+                        
+                        <th>Image</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                    <tr>
+                        <td>{{ row.date }}</td>
+                        <td>{{ row.time }}</td>
+                        <td>{{ row.project_type }}</td>
+                        <td>{{ row.lat }}</td>
+                        <td>{{ row.lon }}</td>
+                        <td>{{ row.pin_id }}</td>
+                        
+                        {% if current_project == 'Ocean' %}
+                            <td>{{ row.ph }}</td>
+                            <td>{{ row.tds }}</td>
+                            <td>{{ row.temp }}</td>
+                        {% else %}
+                            <td>{{ row.temp }}</td>
+                            <td>{{ row.ph }}</td>
+                            <td>{{ row.do }}</td>
+                            <td>{{ row.tds }}</td>
+                        {% endif %}
+                        
+                        <td>
+                            {% if row.image_url %}
+                                <a href="{{ row.image_url }}" target="_blank" class="view-link">View</a>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if not data %}
+                <p style="text-align:center; padding: 20px; color: #666;">No records found for {{ current_project }} monitoring.</p>
+            {% endif %}
         </div>
+
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        let currentP = 'Ocean';
-        const map = L.map('map').setView([17.3850, 78.4867], 10);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        // Initialize Map
+        var map = L.map('map').setView([20.5937, 78.9629], 5); // Default center (India)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
-        function getLocation() {
-            navigator.geolocation.getCurrentPosition(p => {
-                const { latitude, longitude } = p.coords;
-                document.getElementById('latDisp').value = latitude;
-                document.getElementById('lonDisp').value = longitude;
-                map.setView([latitude, longitude], 14);
-                L.marker([latitude, longitude]).addTo(map).bindPopup("Current Location").openPopup();
-            });
+        var marker;
+
+        function detectLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var lat = position.coords.latitude;
+                    var lon = position.coords.longitude;
+
+                    // Fill Inputs
+                    document.getElementById('lat').value = lat;
+                    document.getElementById('lon').value = lon;
+
+                    // Update Map
+                    if (marker) {
+                        map.removeLayer(marker);
+                    }
+                    map.setView([lat, lon], 15);
+                    marker = L.marker([lat, lon]).addTo(map)
+                        .bindPopup("You are here")
+                        .openPopup();
+                }, function(error) {
+                    alert("Error getting location: " + error.message);
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
         }
-
-        async function switchTable(p) {
-            currentP = p;
-            document.getElementById('tableTitle').innerText = p + " Monitoring Data";
-            const res = await fetch(`/api/data?project=${p}`);
-            const data = await res.json();
-            
-            const cols = p === 'Ocean' 
-                ? ['Date', 'Time', 'Water Type', 'Lat', 'Lon', 'PinID', 'pH', 'TDS', 'Temp', 'Image']
-                : ['Date', 'Time', 'Water Type', 'Lat', 'Lon', 'Pin ID', 'Temp', 'pH', 'DO', 'TDS', 'Image'];
-
-            document.getElementById('hRow').innerHTML = cols.map(c => `<th>${c}</th>`).join('');
-            document.getElementById('bRow').innerHTML = data.map(r => `
-                <tr>
-                    <td>${r.timestamp.split('T')[0]}</td>
-                    <td>${r.timestamp.split('T')[1].split('.')[0]}</td>
-                    <td>${r.project_type}</td>
-                    <td>${r.latitude.toFixed(4)}</td>
-                    <td>${r.longitude.toFixed(4)}</td>
-                    <td>${r.pin_id}</td>
-                    <td>${r.ph}</td><td>${r.tds}</td><td>${r.temperature}</td>
-                    <td><a href="${r.image_url}" target="_blank">View</a></td>
-                </tr>`).join('');
-        }
-        function downloadData() { window.location.href = `/export/${currentP}`; }
-        switchTable('Ocean');
     </script>
 </body>
 </html>

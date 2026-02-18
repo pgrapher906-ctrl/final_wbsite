@@ -16,13 +16,13 @@ class WaterData(db.Model):
     tds = db.Column(db.Float)
     do = db.Column(db.Float)
 
-    # 🔥 UPDATED: Must be db.Text to hold Base64 strings
     image_path = db.Column(db.Text)
 
     def to_dict(self):
         return {
             'id': self.id,
-            'timestamp': self.timestamp,
+            # Use ISO format for cleaner JSON delivery
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
             'latitude': self.latitude,
             'longitude': self.longitude,
             'water_type': self.water_type,
@@ -31,6 +31,6 @@ class WaterData(db.Model):
             'ph': float(self.ph) if self.ph else 0.0,
             'tds': self.tds,
             'do': self.do,
-            # We return just a flag to the frontend, not the huge string
-            'image_path': "Image Available" if self.image_path else None
+            # We only send a True/False flag to save RAM
+            'has_image': True if self.image_path else False
         }

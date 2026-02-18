@@ -19,89 +19,60 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- Registration (Fixed duplicate email crash) ---
 @main_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        email = request.form.get('email')
-        username = request.form.get('username')
-        user_exists = User.query.filter((User.email == email) | (User.username == username)).first()
-        if user_exists:
+        email, user = request.form.get('email'), request.form.get('username')
+        if User.query.filter((User.email == email) | (User.username == user)).first():
             return render_template('register.html', error="User already exists.")
         try:
-            user = User(username=username, email=email)
-            user.set_password(request.form.get('password'))
-            db.session.add(user)
-            db.session.commit()
+            new_u = User(username=user, email=email)
+            new_u.set_password(request.form.get('password'))
+            db.session.add(new_u); db.session.commit()
             return redirect(url_for('main.login'))
-        except:
-            db.session.rollback()
-            return render_template('register.html', error="Registration failed.")
+        except: return render_template('register.html', error="Registration Error.")
     return render_template('register.html')
 
-# --- Login ---
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
-            u.visit_count += 1
-            u.last_login = datetime.now()
-            db.session.commit()
-            session.update({
-                'user_id': u.id, 'username': u.username,
-                'visit_count': u.visit_count,
-                'last_login': u.last_login.strftime('%Y-%m-%d %H:%M')
-            })
+            session.update({'user_id': u.id, 'username': u.username})
             return redirect(url_for('main.index'))
     return render_template('login.html')
+
+@main_bp.route('/api/data')
+@login_required
+def get_data():
+    readings = WaterData.query.all()
+    return jsonify([r.to_dict() for r in readings])
+
+@main_bp.route('/export/<project>')
+@login_required
+def export_excel(project):
+    readings = WaterData.query.all()
+    wb = Workbook()
+    ws = wb.active
+    ws.append(['ID', 'Time', 'Lat', 'Lon', 'Type', 'pH', 'TDS', 'Temp'])
+    for r in readings:
+        ws.append([r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, float(r.ph), r.tds, r.temperature])
+    output = BytesIO()
+    wb.save(output); output.seek(0)
+    return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name="AquaFlow_Data.xlsx")
+
+@main_bp.route('/image/<int:record_id>')
+@login_required
+def get_image(record_id):
+    r = WaterData.query.get(record_id)
+    if r and r.image_path:
+        img_data = r.image_path.split(",")[1] if "," in r.image_path else r.image_path
+        return send_file(BytesIO(base64.b64decode(img_data)), mimetype='image/jpeg')
+    return "Not found", 404
 
 @main_bp.route('/')
 @login_required
 def index(): return render_template('index.html')
 
-@main_bp.route('/api/data')
-@login_required
-def get_data():
-    proj = request.args.get('project', 'Ocean')
-    query = WaterData.query
-    if proj == 'Ocean':
-        readings = query.filter(or_(WaterData.water_type.ilike('%Ocean%'), WaterData.water_type.ilike('%Sea%'))).all()
-    else:
-        readings = query.filter(or_(WaterData.water_type.ilike('%Pond%'), WaterData.water_type.ilike('%Drinking%'))).all()
-    return jsonify([r.to_dict() for r in readings])
-
-@main_bp.route('/image/<int:record_id>')
-@login_required
-def get_image(record_id):
-    record = WaterData.query.get(record_id)
-    if record and record.image_path:
-        try:
-            image_text = record.image_path
-            if "," in image_text: image_text = image_text.split(",")[1]
-            return send_file(BytesIO(base64.b64decode(image_text)), mimetype='image/jpeg')
-        except: return "Error", 500
-    return "Not found", 404
-
-# --- Excel Export (Fixed for Vercel Memory) ---
-@main_bp.route('/export/<project>')
-@login_required
-def export_excel(project):
-    if project == 'Ocean':
-        readings = WaterData.query.filter(WaterData.water_type.ilike('%Ocean%')).all()
-    else:
-        readings = WaterData.query.filter(WaterData.water_type.ilike('%Pond%')).all()
-    wb = Workbook()
-    ws = wb.active
-    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'TDS', 'Temp', 'DO'])
-    for r in readings:
-        ws.append([r.id, r.timestamp.strftime('%Y-%m-%d %H:%M') if r.timestamp else '', r.latitude, r.longitude, r.water_type, float(r.ph) if r.ph else 0, r.tds, r.temperature, r.do])
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
-    return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=f"AquaFlow_{project}.xlsx")
-
 @main_bp.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('main.login'))
+def logout(): session.clear(); return redirect(url_for('main.login'))

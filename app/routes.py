@@ -8,6 +8,7 @@ from app.models.water_reading import WaterData
 from datetime import datetime
 from functools import wraps
 from sqlalchemy import or_
+from openpyxl import Workbook
 
 main_bp = Blueprint('main', __name__)
 
@@ -18,17 +19,16 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- Registration (FIXED: Prevents 500 error on duplicate email) ---
+# --- Registration (Fixed: Prevents 500 error on duplicate email) ---
 @main_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         email = request.form.get('email')
         username = request.form.get('username')
         
-        # Check if user already exists
         user_exists = User.query.filter((User.email == email) | (User.username == username)).first()
         if user_exists:
-            return render_template('register.html', error="Email or Username already registered.")
+            return render_template('register.html', error="Email or Username already exists.")
              
         try:
             user = User(username=username, email=email)
@@ -36,13 +36,12 @@ def register():
             db.session.add(user)
             db.session.commit()
             return redirect(url_for('main.login'))
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            return render_template('register.html', error="Database error. Please try again.")
-
+            return render_template('register.html', error="Registration failed. Try again.")
     return render_template('register.html')
 
-# --- Login & Tracking ---
+# --- Login (Fixed: Modern Hash Support) ---
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -68,14 +67,11 @@ def index():
 @login_required
 def get_data():
     proj = request.args.get('project', 'Ocean')
-    
-    # Query without loading the heavy image_path column initially
     query = WaterData.query
     if proj == 'Ocean':
         readings = query.filter(or_(WaterData.water_type.ilike('%Ocean%'), WaterData.water_type.ilike('%Sea%'))).all()
     else:
         readings = query.filter(or_(WaterData.water_type.ilike('%Pond%'), WaterData.water_type.ilike('%Drinking%'))).all()
-        
     return jsonify([r.to_dict() for r in readings])
 
 @main_bp.route('/image/<int:record_id>')
@@ -93,30 +89,23 @@ def get_image(record_id):
             return "Image Error", 500
     return "Not found", 404
 
-# --- Excel Export (FIXED for Vercel/Memory Efficiency) ---
+# --- Excel Export (Fixed for Vercel/Memory Efficiency) ---
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
-    from openpyxl import Workbook
-    
     if project == 'Ocean':
         readings = WaterData.query.filter(WaterData.water_type.ilike('%Ocean%')).all()
     else:
         readings = WaterData.query.filter(WaterData.water_type.ilike('%Pond%')).all()
 
-    # Build Excel manually for speed and memory
     wb = Workbook()
     ws = wb.active
-    ws.title = "AquaFlow Data"
-    
-    # Headers
-    headers = ['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'TDS', 'Temp', 'DO']
-    ws.append(headers)
+    ws.title = "AquaFlow Monitoring"
+    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'TDS', 'Temp', 'DO'])
 
     for r in readings:
         ws.append([
-            r.id, 
-            r.timestamp.strftime('%Y-%m-%d %H:%M') if r.timestamp else '',
+            r.id, r.timestamp.strftime('%Y-%m-%d %H:%M') if r.timestamp else '',
             r.latitude, r.longitude, r.water_type, 
             float(r.ph) if r.ph else 0.0, r.tds, r.temperature, r.do
         ])
@@ -124,13 +113,7 @@ def export_excel(project):
     output = BytesIO()
     wb.save(output)
     output.seek(0)
-
-    return send_file(
-        output,
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        as_attachment=True,
-        download_name=f"AquaFlow_{project}_Data.xlsx"
-    )
+    return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=f"AquaFlow_{project}.xlsx")
 
 @main_bp.route('/logout')
 def logout():

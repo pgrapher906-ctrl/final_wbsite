@@ -1,79 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AquaFlow - Login</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <title>Login - AquaFlow</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #e9ecef; }
+        form { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; }
+        h2 { text-align: center; color: #333; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;}
+        button { width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .link { text-align: center; margin-top: 10px; font-size: 0.9em; }
+    </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-card">
-            <!-- Logo Section -->
-            <div class="logo-section">
-                <div class="logo-icon">🌊</div>
-                <h1 class="app-title">AquaFlow</h1>
-                <p class="app-subtitle">Smart Water Quality IoT System</p>
-            </div>
-
-            <!-- Login Form -->
-            <form method="POST" action="{{ url_for('main.login') }}" class="login-form">
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <input 
-                        type="text" 
-                        id="username" 
-                        name="username" 
-                        class="form-input" 
-                        placeholder="Enter your username" 
-                        required 
-                        autofocus>
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        name="password" 
-                        class="form-input" 
-                        placeholder="Enter your password" 
-                        required>
-                </div>
-
-                {% if error %}
-                <div class="error-message">
-                    <span class="error-icon">⚠️</span>
-                    {{ error }}
-                </div>
-                {% endif %}
-
-                <button type="submit" class="login-btn">
-                    <span class="btn-text">Sign In</span>
-                    <span class="btn-icon">→</span>
-                </button>
-            </form>
-
-            <!-- Registration Link -->
-            <div class="auth-link">
-                <p>Don't have an account? <a href="{{ url_for('main.register') }}">Create One</a></p>
-            </div>
-
-            <!-- Footer -->
-            <div class="login-footer">
-                <p>🔒 Secure Smart Water Quality System</p>
-                <p style="margin-top: 8px; color: #999; font-size: 12px;">
-                    © 2026 AquaFlow. All rights reserved.
-                </p>
-            </div>
-        </div>
-
-        <!-- Background Animation -->
-        <div class="background-animation">
-            <div class="water-wave water-wave-1"></div>
-            <div class="water-wave water-wave-2"></div>
-            <div class="water-wave water-wave-3"></div>
-        </div>
-    </div>
+    <form method="POST">
+        <h2>AquaFlow Login</h2>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <p style="color: red; text-align: center;">{{ messages[0] }}</p>
+            {% endif %}
+        {% endwith %}
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+        <div class="link"><a href="{{ url_for('main.register') }}">Create an Account</a></div>
+    </form>
 </body>
 </html>

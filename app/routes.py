@@ -43,6 +43,10 @@ def register():
         username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        if password != confirm_password:
+            return render_template('register.html', error="Passwords do not match")
         
         if User.query.filter_by(username=username).first():
             return render_template('register.html', error="Username already exists")

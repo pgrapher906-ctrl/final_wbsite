@@ -10,6 +10,7 @@ def create_app(config_class=Config):
 
     db.init_app(app)
 
+    # Automatically creates all necessary tables in Neon on startup
     with app.app_context():
         from app.models.user import User
         from app.models.water_reading import WaterReading

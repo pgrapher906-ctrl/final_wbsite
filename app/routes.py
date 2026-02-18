@@ -6,6 +6,7 @@ from app.models.user import User
 from app.models.water_reading import WaterReading
 from datetime import datetime
 from functools import wraps
+from sqlalchemy import or_
 
 main_bp = Blueprint('main', __name__)
 
@@ -33,11 +34,9 @@ def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
-            # Update tracking stats
             u.visit_count += 1
             u.last_login = datetime.utcnow()
             db.session.commit()
-            
             session.update({
                 'user_id': u.id, 'username': u.username,
                 'visit_count': u.visit_count,
@@ -52,26 +51,60 @@ def login():
 def index():
     return render_template('index.html')
 
-# --- Data Fetching ---
+# --- FIXED DATA FETCHING ---
 @main_bp.route('/api/data')
 @login_required
 def get_data():
     proj = request.args.get('project', 'Ocean')
-    # This fetches the data your OTHER website saved
-    readings = WaterReading.query.filter_by(project_type=proj).all()
+    
+    if proj == 'Ocean':
+        # Searches for ANY entry containing "Ocean", "Sea", "Marine", or "Coastal"
+        readings = WaterReading.query.filter(
+            or_(
+                WaterReading.project_type.ilike('%Ocean%'),
+                WaterReading.project_type.ilike('%Sea%'),
+                WaterReading.project_type.ilike('%Marine%'),
+                WaterReading.project_type.ilike('%Coastal%'),
+                WaterReading.project_type.ilike('%Estuarine%')
+            )
+        ).all()
+    else:
+        # Searches for ANY entry containing "Pond", "Drinking", or "Ground"
+        readings = WaterReading.query.filter(
+            or_(
+                WaterReading.project_type.ilike('%Pond%'),
+                WaterReading.project_type.ilike('%Drinking%'),
+                WaterReading.project_type.ilike('%Ground%')
+            )
+        ).all()
+        
     return jsonify([r.to_dict() for r in readings])
 
 # --- Excel Export ---
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
-    readings = WaterReading.query.filter_by(project_type=project).all()
-    # Convert DB objects to a list of dicts for Pandas
+    # Apply the same flexible search for the Excel export
+    if project == 'Ocean':
+        readings = WaterReading.query.filter(
+            or_(
+                WaterReading.project_type.ilike('%Ocean%'),
+                WaterReading.project_type.ilike('%Sea%'),
+                WaterReading.project_type.ilike('%Marine%'),
+                WaterReading.project_type.ilike('%Coastal%')
+            )
+        ).all()
+    else:
+        readings = WaterReading.query.filter(
+            or_(WaterReading.project_type.ilike('%Pond%'), WaterReading.project_type.ilike('%Drinking%'))
+        ).all()
+
     data = []
     for r in readings:
         row = r.to_dict()
-        row['Date'] = r.timestamp.strftime('%Y-%m-%d')
-        row['Time'] = r.timestamp.strftime('%H:%M:%S')
+        if r.timestamp:
+            row['Date'] = r.timestamp.strftime('%Y-%m-%d')
+            row['Time'] = r.timestamp.strftime('%H:%M:%S')
         data.append(row)
         
     df = pd.DataFrame(data)

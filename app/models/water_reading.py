@@ -14,9 +14,9 @@ class WaterReading(db.Model):
     tds = db.Column(db.Float)
     temperature = db.Column(db.Float)
     chlorophyll = db.Column(db.Float)
-    ta = db.Column(db.Float)
-    dic = db.Column(db.Float)
-    do = db.Column(db.Float)
+    ta = db.Column(db.Float) # Ocean specific
+    dic = db.Column(db.Float) # Ocean specific
+    do = db.Column(db.Float)  # Pond specific
 
     def to_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}

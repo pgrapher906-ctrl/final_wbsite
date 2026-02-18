@@ -1,11 +1,7 @@
 import os
 
 class Config:
-    # Fix Render's postgres:// vs postgresql:// requirement
-    uri = os.environ.get("DATABASE_URL")
-    if uri and uri.startswith("postgres://"):
-        uri = uri.replace("postgres://", "postgresql://", 1)
-    
-    SQLALCHEMY_DATABASE_URI = uri
+    SECRET_KEY = 'your_secret_key_here'
+    # Replace with your actual Neon DB connection string
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'postgresql://neondb_owner:npg_qna54HgPVOvb@ep-flat-wind-aiezn0bh-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = os.environ.get("SECRET_KEY", "nrsc_water_2026_secure")

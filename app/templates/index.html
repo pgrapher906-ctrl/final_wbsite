@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NRSC Water Quality Monitor</title>
+    <title>NRSC Water Monitoring</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <style>
         :root { --bg: #F4F6F9; --primary: #0A3D62; --teal: #1ABC9C; }
@@ -16,14 +16,14 @@
         #map { height: 350px; width: 100%; border-radius: 8px; }
         .info-icon { cursor: pointer; color: var(--teal); font-weight: bold; position: relative; }
         .info-icon:hover::after {
-            content: "Visits: {{ session.visit_count }} | Last Login: {{ session.last_login }}";
+            content: "Visits: {{ session.visit_count }} | Last: {{ session.last_login }}";
             position: absolute; background: #333; color: white; padding: 10px; border-radius: 4px; width: 220px; top: 30px; right: 0; z-index: 100;
         }
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <div>🌊 <strong>NRSC Smart Reception Kiosk</strong></div>
+        <div>🌊 <strong>NRSC Monitoring</strong></div>
         <div>
             <span>User: {{ session.username }}</span>
             <span class="info-icon"> ℹ️ </span>
@@ -35,6 +35,7 @@
             <h3>Step 1: Location Filter</h3>
             <div id="map"></div>
         </div>
+        
         <div class="card">
             <h3>Step 2: Project Selection</h3>
             <button class="btn" onclick="loadData('Ocean')">Ocean Monitoring</button>
@@ -64,15 +65,14 @@
             const data = await res.json();
             const header = document.getElementById('tableHeader');
             const cols = project === 'Ocean' 
-                ? ['Date', 'Lat', 'Lon', 'Pin ID', 'Chlorophyll', 'TA', 'DIC', 'pH', 'TDS', 'Temp', 'Image']
-                : ['Date', 'Lat', 'Lon', 'Pin ID', 'Temp', 'pH', 'DO', 'TDS', 'Chlorophyll', 'Image'];
+                ? ['Date', 'Time', 'Type', 'Lat', 'Lon', 'Pin ID', 'pH', 'TDS', 'Temp', 'Image']
+                : ['Date', 'Time', 'Type', 'Lat', 'Lon', 'Pin ID', 'Temp', 'pH', 'DO', 'TDS', 'Chlorophyll', 'Image'];
             header.innerHTML = cols.map(c => `<th>${c}</th>`).join('');
             const body = document.getElementById('tableBody');
             body.innerHTML = data.map(r => `
                 <tr>
-                    <td>${r.timestamp.split('T')[0]}</td><td>${r.latitude.toFixed(3)}</td><td>${r.longitude.toFixed(3)}</td>
-                    <td>${r.pin_id}</td><td>${project === 'Ocean' ? r.chlorophyll : r.temperature}</td>
-                    <td>${project === 'Ocean' ? r.ta : r.ph}</td><td>${project === 'Ocean' ? r.dic : r.do}</td>
+                    <td>${r.timestamp.split('T')[0]}</td><td>${r.timestamp.split('T')[1].split('.')[0]}</td>
+                    <td>${r.project_type}</td><td>${r.latitude}</td><td>${r.longitude}</td><td>${r.pin_id}</td>
                     <td>${r.ph}</td><td>${r.tds}</td><td>${r.temperature}</td>
                     <td><a href="${r.image_url}" target="_blank">View</a></td>
                 </tr>`).join('');

@@ -1,74 +1,47 @@
-import os
-import random
+import os, random
 from datetime import datetime, timedelta
 from app import create_app, db
 from app.models import WaterReading, User
 
 app = create_app(os.getenv("FLASK_ENV", "development"))
 
-@app.cli.command("seed-db")
-def seed_db():
-    """Seeds the Neon PostgreSQL database with professional sample data"""
-    print("Deleting old data...")
-    WaterReading.query.delete()
-    
-    projects = ['Ocean', 'Pond']
-    
-    # Coordinates for sample locations (e.g., coastal regions for Ocean, inland for Pond)
-    locations = [
-        (17.3850, 78.4867), # Hyderabad area
-        (13.0827, 80.2707), # Chennai (Coastal)
-        (19.0760, 72.8777), # Mumbai (Coastal)
-    ]
-
-    print("Generating 50 professional readings...")
-    for i in range(50):
-        project = random.choice(projects)
-        lat, lon = random.choice(locations)
-        
-        reading = WaterReading(
-            project_type=project,
-            timestamp=datetime.utcnow() - timedelta(days=random.randint(0, 30), hours=random.randint(0, 23)),
-            latitude=lat + random.uniform(-0.1, 0.1),
-            longitude=lon + random.uniform(-0.1, 0.1),
-            pin_id=f"NRSC-{random.randint(1000, 9999)}",
-            ph=round(random.uniform(6.5, 8.5), 2),
-            tds=round(random.uniform(100, 500), 2),
-            temperature=round(random.uniform(22.0, 32.0), 1),
-            chlorophyll=round(random.uniform(0.1, 10.0), 2),
-            image_url="https://via.placeholder.com/150/0A3D62/FFFFFF?text=Water+Sample"
-        )
-
-        # Add project-specific data
-        if project == 'Ocean':
-            reading.ta = round(random.uniform(2000, 2500), 2)
-            reading.dic = round(random.uniform(1800, 2200), 2)
-        else:
-            reading.do = round(random.uniform(4.0, 9.0), 2)
-
-        db.session.add(reading)
-
-    db.session.commit()
-    print("✅ Database successfully seeded with 50 readings!")
-
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+@app.cli.command("init-db")
+def init_db():
+    db.create_all()
+    print("✅ Database Tables Created!")
 
 @app.cli.command("create-admin")
 def create_admin():
-    """Creates a professional admin user"""
     from app.models import User
-    
-    # Check if admin already exists
-    if User.query.filter_by(username='admin').first():
-        print("Admin user already exists.")
-        return
-
-    admin = User(username='admin')
-    admin.set_password('admin123') # You can change this password
+    if User.query.filter_by(username='admin').first(): return
+    admin = User(username='admin', email='admin@nrsc.gov.in')
+    admin.set_password('admin123')
     db.session.add(admin)
     db.session.commit()
-    print("✅ Admin account created!")
-    print("Username: admin")
-    print("Password: admin123")
+    print("✅ Admin created: admin / admin123")
+
+@app.cli.command("seed-db")
+def seed_db():
+    WaterReading.query.delete()
+    for i in range(50):
+        proj = random.choice(['Ocean', 'Pond'])
+        r = WaterReading(
+            project_type=proj,
+            timestamp=datetime.utcnow() - timedelta(days=random.randint(0,10)),
+            latitude=17.3 + random.uniform(-0.5, 0.5),
+            longitude=78.4 + random.uniform(-0.5, 0.5),
+            pin_id=f"NRSC-{random.randint(100,999)}",
+            ph=round(random.uniform(7, 8), 2),
+            tds=random.randint(200, 500),
+            temperature=round(random.uniform(25, 30), 1),
+            chlorophyll=round(random.uniform(0, 5), 2),
+            image_url="https://via.placeholder.com/50"
+        )
+        if proj == 'Ocean': r.ta, r.dic = 2200, 2000
+        else: r.do = 6.5
+        db.session.add(r)
+    db.session.commit()
+    print("✅ Seeded 50 records!")
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)

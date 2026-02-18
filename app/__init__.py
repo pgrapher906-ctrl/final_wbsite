@@ -10,6 +10,13 @@ bcrypt = Bcrypt()
 login_manager = LoginManager()
 login_manager.login_view = 'main.login'
 
+# --- THE MISSING FIX: User Loader Function ---
+@login_manager.user_loader
+def load_user(user_id):
+    from app.models.user import User
+    return User.query.get(int(user_id))
+# ---------------------------------------------
+
 def create_app():
     app = Flask(__name__)
 
@@ -18,11 +25,10 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
-    # --- 2. THE CRITICAL FIX (Prevent SSL Disconnects) ---
-    # This forces the app to "ping" the DB before every request.
+    # --- 2. Connection Keep-Alive (Prevents SSL Errors) ---
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         "pool_pre_ping": True,  
-        "pool_recycle": 300,    # Recycle connections every 5 minutes
+        "pool_recycle": 300,
     }
 
     # --- 3. Initialize App ---

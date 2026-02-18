@@ -10,13 +10,6 @@ bcrypt = Bcrypt()
 login_manager = LoginManager()
 login_manager.login_view = 'main.login'
 
-# --- THE MISSING FIX: User Loader Function ---
-@login_manager.user_loader
-def load_user(user_id):
-    from app.models.user import User
-    return User.query.get(int(user_id))
-# ---------------------------------------------
-
 def create_app():
     app = Flask(__name__)
 
@@ -27,20 +20,28 @@ def create_app():
     
     # --- 2. Connection Keep-Alive (Prevents SSL Errors) ---
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        "pool_pre_ping": True,  
+        "pool_pre_ping": True,
         "pool_recycle": 300,
     }
 
-    # --- 3. Initialize App ---
+    # --- 3. Initialize Extensions ---
     db.init_app(app)
     bcrypt.init_app(app)
     login_manager.init_app(app)
 
-    # --- 4. Register Blueprints ---
+    # --- 4. THE FIX: User Loader Function ---
+    # This tells Flask-Login how to find the user in the database
+    from app.models.user import User
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+    # ----------------------------------------
+
+    # --- 5. Register Blueprints ---
     from app.routes import main_bp
     app.register_blueprint(main_bp)
 
-    # --- 5. Create Tables Automatically ---
+    # --- 6. Create Tables Automatically ---
     with app.app_context():
         db.create_all()
 

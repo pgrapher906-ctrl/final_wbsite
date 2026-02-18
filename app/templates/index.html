@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NRSC Water Monitoring</title>
+    <title>NRSC Water Quality Monitor</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
     <style>
         :root { --bg: #F4F6F9; --primary: #0A3D62; --teal: #1ABC9C; }
@@ -16,7 +16,7 @@
         #map { height: 350px; width: 100%; border-radius: 8px; }
         .info-icon { cursor: pointer; color: var(--teal); font-weight: bold; position: relative; }
         .info-icon:hover::after {
-            content: "Visits: {{ session.visit_count }} | Last: {{ session.last_login }}";
+            content: "Visits: {{ session.visit_count }} | Last Login: {{ session.last_login }}";
             position: absolute; background: #333; color: white; padding: 10px; border-radius: 4px; width: 220px; top: 30px; right: 0; z-index: 100;
         }
     </style>
@@ -65,15 +65,17 @@
             const data = await res.json();
             const header = document.getElementById('tableHeader');
             const cols = project === 'Ocean' 
-                ? ['Date', 'Time', 'Type', 'Lat', 'Lon', 'Pin ID', 'pH', 'TDS', 'Temp', 'Image']
+                ? ['Date', 'Time', 'Type', 'Lat', 'Lon', 'Pin ID', 'pH', 'TDS', 'Temp', 'TA', 'DIC', 'Image']
                 : ['Date', 'Time', 'Type', 'Lat', 'Lon', 'Pin ID', 'Temp', 'pH', 'DO', 'TDS', 'Chlorophyll', 'Image'];
             header.innerHTML = cols.map(c => `<th>${c}</th>`).join('');
             const body = document.getElementById('tableBody');
             body.innerHTML = data.map(r => `
                 <tr>
-                    <td>${r.timestamp.split('T')[0]}</td><td>${r.timestamp.split('T')[1].split('.')[0]}</td>
-                    <td>${r.project_type}</td><td>${r.latitude}</td><td>${r.longitude}</td><td>${r.pin_id}</td>
-                    <td>${r.ph}</td><td>${r.tds}</td><td>${r.temperature}</td>
+                    <td>${r.timestamp.split('T')[0]}</td>
+                    <td>${r.timestamp.split('T')[1].split('.')[0]}</td>
+                    <td>${r.project_type}</td><td>${r.latitude.toFixed(3)}</td><td>${r.longitude.toFixed(3)}</td>
+                    <td>${r.pin_id}</td><td>${r.ph}</td><td>${r.tds}</td><td>${r.temperature}</td>
+                    ${project === 'Ocean' ? `<td>${r.ta}</td><td>${r.dic}</td>` : `<td>${r.do}</td><td>${r.chlorophyll}</td>`}
                     <td><a href="${r.image_url}" target="_blank">View</a></td>
                 </tr>`).join('');
         }

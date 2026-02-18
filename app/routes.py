@@ -28,7 +28,8 @@ def login():
             user.last_login = datetime.utcnow()
             db.session.commit()
             session.update({
-                'user_id': user.id, 'username': user.username,
+                'user_id': user.id, 
+                'username': user.username,
                 'visit_count': user.visit_count,
                 'last_login': user.last_login.strftime('%Y-%m-%d %H:%M')
             })

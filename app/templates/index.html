@@ -1,41 +1,14 @@
-<script>
-    // ... (map and detectLocation remain the same) ...
-
-    async function loadData(proj) {
-        currentProject = proj;
-        document.getElementById('tableHeader').innerText = proj + " Monitoring Data";
-        
-        const res = await fetch(`/api/data?project=${proj}`);
-        const data = await res.json();
-        
-        const cols = proj === 'Ocean' 
-            ? ['timestamp', 'water_type', 'latitude', 'longitude', 'pin_id', 'ph', 'tds', 'temperature', 'has_image']
-            : ['timestamp', 'water_type', 'latitude', 'longitude', 'pin_id', 'temperature', 'ph', 'do', 'tds', 'has_image'];
-        
-        const displayCols = proj === 'Ocean'
-            ? ['Date/Time', 'Type', 'Lat', 'Lon', 'Pin ID', 'pH', 'TDS', 'Temp', 'Image']
-            : ['Date/Time', 'Type', 'Lat', 'Lon', 'Pin ID', 'Temp', 'pH', 'DO', 'TDS', 'Image'];
-
-        document.getElementById('thead').innerHTML = displayCols.map(c => `<th>${c}</th>`).join('');
-        
-        document.getElementById('tbody').innerHTML = data.map(r => {
-            let rowHtml = cols.map(key => {
-                if(key === 'timestamp') return `<td>${new Date(r[key]).toLocaleString()}</td>`;
-                
-                // --- UPDATED IMAGE LOGIC ---
-                if(key === 'has_image') {
-                    if (r.has_image) {
-                         return `<td><a href="/image/${r.id}" target="_blank" style="color:#1ABC9C; font-weight:bold;">View Image</a></td>`;
-                    } else {
-                         return `<td>No Image</td>`;
-                    }
-                }
-                
-                if(typeof r[key] === 'number') return `<td>${r[key].toFixed(2)}</td>`;
-                return `<td>${r[key] || '-'}</td>`;
-            }).join('');
-            return `<tr>${rowHtml}</tr>`;
-        }).join('');
-    }
-    loadData('Ocean');
-</script>
+// Inside your loadData(proj) function in index.html:
+document.getElementById('tbody').innerHTML = data.map(r => {
+    let rowHtml = cols.map(key => {
+        if(key === 'timestamp') return `<td>${new Date(r[key]).toLocaleString()}</td>`;
+        if(key === 'has_image') {
+            return r.has_image 
+                ? `<td><a href="/image/${r.id}" target="_blank" style="color:#1ABC9C; font-weight:bold;">View Image</a></td>`
+                : `<td>No Image</td>`;
+        }
+        if(typeof r[key] === 'number') return `<td>${r[key].toFixed(2)}</td>`;
+        return `<td>${r[key] || '-'}</td>`;
+    }).join('');
+    return `<tr>${rowHtml}</tr>`;
+}).join('');

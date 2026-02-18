@@ -16,12 +16,12 @@ class WaterData(db.Model):
     tds = db.Column(db.Float)
     do = db.Column(db.Float)
 
+    # Stores the Base64 image text
     image_path = db.Column(db.Text)
 
     def to_dict(self):
         return {
             'id': self.id,
-            # Use ISO format for cleaner JSON delivery
             'timestamp': self.timestamp.isoformat() if self.timestamp else None,
             'latitude': self.latitude,
             'longitude': self.longitude,
@@ -31,6 +31,6 @@ class WaterData(db.Model):
             'ph': float(self.ph) if self.ph else 0.0,
             'tds': self.tds,
             'do': self.do,
-            # We only send a True/False flag to save RAM
-            'has_image': True if self.image_path else False
+            # Flag only: This stops the 'Out of Memory' crash on Render/Vercel
+            'has_image': True if self.image_path else False 
         }

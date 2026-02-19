@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const headerRow = document.getElementById('table-headers');
         const tableBody = document.getElementById('data-table-body');
         
-        // Dynamic Header Toggle
+        // Dynamic Header Logic
         const isPondView = activeFilter === 'Pond Water';
         headerRow.innerHTML = `
             <th>TIME</th><th>CLASSIFICATION</th><th>COORDINATES</th>
@@ -45,10 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
             const type = this.getAttribute('data-type');
-            
             let filtered = (type === 'All') ? allData : allData.filter(d => 
                 (type === 'Ocean') ? oceanSubtypes.includes(d.water_type.toLowerCase()) : d.water_type === type
             );

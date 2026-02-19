@@ -2,51 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NRSC AquaFlow | Secure Login</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>AquaFlow | Secure Access</title>
     <style>
         body { 
             background: linear-gradient(135deg, #a8dadc 0%, #457b9d 100%);
             height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
         }
         .login-box {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px);
-            padding: 50px;
-            border-radius: 50px;
-            width: 360px;
-            text-align: center;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.1);
-            border: 1px solid rgba(255,255,255,0.4);
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px);
+            padding: 50px; border-radius: 50px; width: 350px; text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.4);
         }
-        h2 { color: #1d3557; font-weight: 800; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
-        p { color: #457b9d; font-size: 0.9rem; margin-bottom: 30px; font-weight: 600; }
+        h2 { color: #1d3557; font-weight: 800; margin-bottom: 30px; }
         input { 
-            width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 25px;
-            border: 1px solid #cdd4da; outline: none; box-sizing: border-box;
-            background: rgba(255, 255, 255, 0.5); transition: 0.3s;
+            width: 100%; padding: 15px; margin-bottom: 20px; border-radius: 25px;
+            border: 1px solid #ddd; outline: none; box-sizing: border-box;
         }
-        input:focus { border-color: #457b9d; background: white; }
         button {
             width: 100%; padding: 15px; background: #457b9d; color: white;
             border: none; border-radius: 25px; font-weight: 700; cursor: pointer;
-            transition: 0.3s; margin-top: 10px;
         }
-        button:hover { background: #1d3557; transform: translateY(-2px); shadow: 0 5px 15px rgba(0,0,0,0.2); }
-        .link { margin-top: 20px; font-size: 0.85rem; color: #1d3557; }
-        .link a { color: #e63946; text-decoration: none; font-weight: 700; }
+        .link { margin-top: 20px; font-size: 0.85rem; }
+        .link a { color: #457b9d; text-decoration: none; font-weight: 700; }
     </style>
 </head>
 <body>
     <div class="login-box">
-        <i class="fas fa-drop fa-3x" style="color: #457b9d; margin-bottom: 15px;"></i>
-        <h2>AQUAFLOW</h2>
-        <p>Remote Water Telemetry Access</p>
+        <h2>AQUAFLOW LOGIN</h2>
         <form method="POST">
-            <input type="text" name="username" placeholder="Operator Username" required>
-            <input type="password" name="password" placeholder="Security Password" required>
-            <button type="submit">AUTHORIZE LOGIN</button>
+            <input type="text" name="username" placeholder="Operator ID" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">AUTHORIZE ACCESS</button>
         </form>
         <div class="link">New Operator? <a href="{{ url_for('main.register') }}">Create Account</a></div>
     </div>

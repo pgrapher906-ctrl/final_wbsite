@@ -14,9 +14,9 @@
         .card { border: 1px solid #dee2e6; border-radius: 10px; overflow: hidden; margin-bottom: 25px; }
         #map { height: 450px; width: 100%; z-index: 1; }
         
-        /* FIX: Force dropdown menu to appear ABOVE the cards and map */
+        /* FIX: Ensure dropdown is visible */
         .dropdown { position: relative; z-index: 1050; }
-        .dropdown-menu { z-index: 2000 !important; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #ddd; }
+        .dropdown-menu { z-index: 2000 !important; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #ddd; }
 
         .badge-ocean { background-color: var(--ocean-cyan); color: white; }
         .badge-pond { background-color: var(--pond-olive); color: white; }
@@ -37,8 +37,8 @@
             </div>
             <div class="coord-display">
                 <div class="row g-2">
-                    <div class="col-6"><input type="text" id="lat-input" class="form-control coord-input" placeholder="Lat" readonly></div>
-                    <div class="col-6"><input type="text" id="lon-input" class="form-control coord-input" placeholder="Lon" readonly></div>
+                    <div class="col-6"><input type="text" id="lat-input" class="form-control coord-input" placeholder="Latitude" readonly></div>
+                    <div class="col-6"><input type="text" id="lon-input" class="form-control coord-input" placeholder="Longitude" readonly></div>
                 </div>
             </div>
             <div id="map"></div>

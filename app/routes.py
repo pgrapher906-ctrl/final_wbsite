@@ -16,7 +16,7 @@ def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
-            # Update user session stats
+            # Update session count on login
             u.visit_count = (u.visit_count or 0) + 1
             db.session.commit()
             login_user(u)
@@ -50,7 +50,7 @@ def export_excel(project):
     wb = Workbook()
     ws = wb.active
     
-    # Dynamic Headers: Pond reports include DO column
+    # Headers logic including DO for Pond reports
     headers = ['ID', 'Timestamp (IST)', 'Latitude', 'Longitude', 'Type', 'pH', 'Temp (°C)', 'TDS (PPM)']
     if is_pond:
         headers.insert(7, 'DO (PPM)')
@@ -86,3 +86,8 @@ def get_image(record_id):
         img_data = r.image_path.split(",")[1] if "," in r.image_path else r.image_path
         return send_file(BytesIO(base64.b64decode(img_data)), mimetype='image/jpeg')
     return "Not found", 404
+
+@main_bp.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('main.login'))

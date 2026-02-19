@@ -10,33 +10,27 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        /* --- NRSC Professional Theme --- */
-        :root { --primary-blue: #004080; --bg-light: #f4f6f9; }
+        :root { --primary-blue: #004080; --ocean-blue: #0077be; --pond-green: #4a7c59; --bg-light: #f4f6f9; }
         body { background-color: var(--bg-light); font-family: 'Segoe UI', sans-serif; }
         
-        /* Navbar */
         .navbar { background-color: var(--primary-blue); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .navbar-brand { font-weight: 700; color: white !important; font-size: 1.25rem; }
         .nav-stats { color: #d1ecf1; font-size: 0.9rem; margin-right: 15px; }
         
-        /* Cards */
         .card { border: none; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 24px; }
         .card-header { background: white; border-bottom: 1px solid #eee; padding: 15px 20px; }
         .step-label { color: var(--primary-blue); font-weight: 700; margin: 0; }
         
-        /* Map Container */
-        #map { height: 400px; width: 100%; border-radius: 8px; border: 1px solid #ddd; background-color: #e9ecef; z-index: 1; }
+        #map { height: 400px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 1; }
         
-        /* Buttons */
         .btn-detect { background-color: #17a2b8; color: white; font-weight: 600; }
-        .btn-detect:hover { background-color: #138496; color: white; }
-        .btn-ocean { background-color: #004080; color: white; }
-        .btn-pond { background-color: #6c757d; color: white; }
+        .btn-ocean { background-color: var(--ocean-blue); color: white; border: none; }
+        .btn-ocean:hover { background-color: #005f99; color: white; }
+        .btn-pond { background-color: var(--pond-green); color: white; border: none; }
+        .btn-pond:hover { background-color: #3a6246; color: white; }
         
-        /* Table */
         .table-custom thead { background-color: var(--primary-blue); color: white; }
-        .table-custom th { font-weight: 600; padding: 12px; border: none; }
-        .table-custom td { vertical-align: middle; }
+        .filter-active { outline: 3px solid #ffc107; outline-offset: -3px; }
     </style>
 </head>
 <body>
@@ -66,10 +60,10 @@
                 </button>
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
-                        <input type="text" id="lat-input" class="form-control" placeholder="Latitude (Waiting for GPS...)" readonly>
+                        <input type="text" id="lat-input" class="form-control" placeholder="Latitude" readonly>
                     </div>
                     <div class="col-md-6">
-                        <input type="text" id="lon-input" class="form-control" placeholder="Longitude (Waiting for GPS...)" readonly>
+                        <input type="text" id="lon-input" class="form-control" placeholder="Longitude" readonly>
                     </div>
                 </div>
                 <div id="map"></div> 
@@ -77,16 +71,36 @@
         </div>
 
         <div class="card">
-            <div class="card-header"><h5 class="step-label">Step 2 – Project Selection</h5></div>
-            <div class="card-body d-flex justify-content-between flex-wrap gap-2">
-                <div class="btn-group">
-                    <button class="btn btn-ocean filter-btn" data-type="Ocean">Ocean Monitoring</button>
-                    <button class="btn btn-pond filter-btn" data-type="Pond">Pond Monitoring</button>
-                    <button class="btn btn-secondary filter-btn" data-type="All">Show All</button>
+            <div class="card-header"><h5 class="step-label">Step 2 – Project & Category Selection</h5></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-lg-8">
+                        <label class="d-block mb-2 fw-bold text-muted small">FILTER BY CATEGORY</label>
+                        <div class="btn-group flex-wrap gap-1">
+                            <button class="btn btn-secondary filter-btn" data-type="All">Show All</button>
+                            <button class="btn btn-ocean filter-btn" data-type="Open Ocean Water">Open Ocean</button>
+                            <button class="btn btn-ocean filter-btn" data-type="Coastal Water">Coastal</button>
+                            <button class="btn btn-ocean filter-btn" data-type="Estuarine Water">Estuarine</button>
+                            <button class="btn btn-ocean filter-btn" data-type="Deep Sea Water">Deep Sea</button>
+                            <button class="btn btn-ocean filter-btn" data-type="Marine Surface Water">Marine Surface</button>
+                            <button class="btn btn-pond filter-btn" data-type="Pond Water">Pond Water</button>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 text-lg-end">
+                        <label class="d-block mb-2 fw-bold text-muted small">REPORTS</label>
+                        <div class="dropdown">
+                            <button class="btn btn-success dropdown-toggle w-100" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-file-excel"></i> Export XLSX
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="/export/All">Everything (Full Dump)</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/export/Ocean">All Ocean Monitoring</a></li>
+                                <li><a class="dropdown-item" href="/export/Pond">Pond Monitoring Only</a></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-                <a href="/export/Ocean" id="btn-export" class="btn btn-success">
-                    <i class="fas fa-file-excel"></i> Export XLSX
-                </a>
             </div>
         </div>
 
@@ -107,7 +121,7 @@
                         </tr>
                     </thead>
                     <tbody id="data-table-body">
-                        <tr><td colspan="8" class="text-center p-4 text-muted">Loading data from database...</td></tr>
+                        <tr><td colspan="8" class="text-center p-4 text-muted">Loading database...</td></tr>
                     </tbody>
                 </table>
             </div>

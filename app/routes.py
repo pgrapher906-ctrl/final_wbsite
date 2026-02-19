@@ -9,53 +9,17 @@ from io import BytesIO
 
 main_bp = Blueprint('main', __name__)
 
-@main_bp.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        new_user = User(username=request.form.get('username'), email=request.form.get('email'))
-        new_user.set_password(request.form.get('password'))
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect(url_for('main.login'))
-    return render_template('register.html')
-
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
             u.visit_count = (u.visit_count or 0) + 1
-            # Track precise date and time for the profile dropdown
             u.last_login = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             db.session.commit()
             login_user(u)
             return redirect(url_for('main.index'))
     return render_template('login.html')
-
-@main_bp.route('/export/<project>')
-@login_required
-def export_excel(project):
-    ocean_group = ['Open Ocean Water', 'Coastal Water', 'Estuarine Water', 'Deep Sea Water', 'Marine Surface Water']
-    pond_group = ['Pond Water', 'Drinking Water', 'Ground Water', 'Borewell Water']
-    
-    if project == "Ocean":
-        readings = WaterData.query.filter(WaterData.water_type.in_(ocean_group)).all()
-    elif project == "Pond":
-        readings = WaterData.query.filter(WaterData.water_type.in_(pond_group)).all()
-    else:
-        readings = WaterData.query.all()
-
-    wb = Workbook()
-    ws = wb.active
-    # Professional headers with DO (PPM) included
-    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'DO (PPM)', 'Temp', 'TDS'])
-    for r in readings:
-        ws.append([r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, r.ph, r.do, r.temperature, r.tds])
-    
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
-    return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=f"NRSC_{project}_Report.xlsx")
 
 @main_bp.route('/api/data')
 @login_required

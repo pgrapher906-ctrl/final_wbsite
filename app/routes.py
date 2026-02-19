@@ -8,6 +8,7 @@ from app import db
 from app.models.user import User
 from app.models.water_reading import WaterData
 from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
 
 main_bp = Blueprint('main', __name__)
 
@@ -31,10 +32,8 @@ def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
-            # Update visit stats on successful login
             u.visit_count = (u.visit_count or 0) + 1
             db.session.commit()
-            
             login_user(u)
             return redirect(url_for('main.index'))
     return render_template('login.html')
@@ -53,7 +52,6 @@ def get_data():
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
-    # NRSC Requirement: Group these 5 types under the "Ocean" category
     ocean_group = [
         'Open Ocean Water', 'Coastal Water', 'Estuarine Water', 
         'Deep Sea Water', 'Marine Surface Water'
@@ -81,6 +79,22 @@ def export_excel(project):
             r.tds, 
             r.temperature
         ])
+
+    # =====================================================
+    # FIX: AUTO-ADJUST COLUMN WIDTHS (Prevents hiding text)
+    # =====================================================
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter 
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        # Set width to max content length + some padding
+        ws.column_dimensions[column].width = max_length + 2
+    # =====================================================
         
     output = BytesIO()
     wb.save(output)

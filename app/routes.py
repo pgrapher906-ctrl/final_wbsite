@@ -35,6 +35,7 @@ def login():
 @login_required
 def export_excel(project):
     ocean_group = ['Open Ocean Water', 'Coastal Water', 'Estuarine Water', 'Deep Sea Water', 'Marine Surface Water']
+    # Grouped Pond types as requested
     pond_group = ['Pond Water', 'Drinking Water', 'Ground Water', 'Borewell Water']
     
     if project == "Ocean":
@@ -65,3 +66,9 @@ def get_data():
 @login_required
 def index():
     return render_template('index.html')
+
+@main_bp.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('main.login'))

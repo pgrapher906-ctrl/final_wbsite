@@ -10,9 +10,20 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderDashboard(data) {
         const tableBody = document.getElementById('data-table-body');
         tableBody.innerHTML = '';
-        
+        markersLayer.clearLayers(); 
+
+        const oceanCount = allData.filter(d => oceanTypes.includes(d.water_type.toLowerCase())).length;
+        const pondCount = allData.filter(d => pondGroupTypes.includes(d.water_type.toLowerCase())).length;
+        document.getElementById('ocean-count').innerText = oceanCount;
+        document.getElementById('pond-count').innerText = pondCount;
+
         data.forEach(row => {
             const isOcean = oceanTypes.includes(row.water_type.toLowerCase());
+            if (row.latitude && row.longitude) {
+                L.circleMarker([row.latitude, row.longitude], {
+                    radius: 11, fillColor: isOcean ? '#457b9d' : '#2a9d8f', color: "#fff", weight: 3, fillOpacity: 0.9
+                }).bindPopup(`<b>${row.water_type}</b>`).addTo(markersLayer);
+            }
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${new Date(row.timestamp).toLocaleTimeString()}</td>
@@ -33,11 +44,9 @@ document.addEventListener('DOMContentLoaded', function() {
         splash.className = 'click-splash';
         btn.appendChild(splash);
         setTimeout(() => splash.remove(), 600);
-
         if (view !== 'All') {
             const icon = document.createElement('i');
             icon.className = `fas ${view === 'Ocean' ? 'fa-fish' : 'fa-droplet'} box-icon`;
-            icon.style.top = '35%';
             btn.appendChild(icon);
             setTimeout(() => icon.remove(), 1200);
         }
@@ -58,6 +67,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 view === 'Ocean' ? oceanTypes.includes(d.water_type.toLowerCase()) : pondGroupTypes.includes(d.water_type.toLowerCase())
             );
             renderDashboard(filtered);
+        });
+    });
+
+    document.getElementById('btn-detect').addEventListener('click', function() {
+        navigator.geolocation.getCurrentPosition(pos => {
+            document.getElementById('lat-input').value = pos.coords.latitude.toFixed(6);
+            document.getElementById('lon-input').value = pos.coords.longitude.toFixed(6);
+            map.setView([pos.coords.latitude, pos.coords.longitude], 14);
         });
     });
 });

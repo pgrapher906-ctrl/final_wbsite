@@ -9,14 +9,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --nrsc-blue: #004080; --ocean-cyan: #0077be; --pond-olive: #4a7c59; --bg-light: #f8f9fa; }
-        body { background-color: var(--bg-light); font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--bg-light); font-family: 'Segoe UI', sans-serif; }
         .navbar { background-color: var(--nrsc-blue); border-bottom: 3px solid #ffc107; }
-        .navbar-brand { font-weight: 800; color: white !important; }
-        .nav-stats { color: #e9ecef; font-size: 0.85rem; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 15px; }
         .card { border: 1px solid #dee2e6; border-radius: 10px; overflow: hidden; margin-bottom: 25px; }
         #map { height: 450px; width: 100%; z-index: 1; }
         
-        /* FIX: Dropdown Visibility Fix */
+        /* FIX: Ensure Export Dropdown is visible over the map */
         .dropdown { position: relative; z-index: 1050; }
         .dropdown-menu { z-index: 2000 !important; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
 
@@ -28,50 +26,43 @@
 </head>
 <body>
     <nav class="navbar sticky-top mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="#"><i class="fas fa-globe-asia me-2"></i> NRSC AquaFlow</a>
-            <div class="d-flex align-items-center text-white">
-                <div class="nav-stats d-none d-md-block text-end me-3">
-                    <div>USER: <strong>{{ current_user.username }}</strong></div>
-                    <div>SESSION: <strong>{{ current_user.visit_count }}</strong></div>
-                </div>
-                <a href="/logout" class="btn btn-sm btn-warning fw-bold">SIGN OUT</a>
-            </div>
+        <div class="container text-white fw-bold">
+            <i class="fas fa-satellite-dish me-2"></i> NRSC AquaFlow Viewer
         </div>
     </nav>
 
     <div class="container">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold mb-0">Step 1 – Spatial Distribution</h5>
-                <button id="btn-detect" class="btn btn-sm btn-info text-white fw-bold"><i class="fas fa-crosshairs"></i> GET GPS</button>
+                <h5 class="fw-bold mb-0">STEP 1 – SPATIAL DISTRIBUTION</h5>
+                <button id="btn-detect" class="btn btn-sm btn-info text-white fw-bold">GET GPS</button>
             </div>
             <div class="coord-display">
                 <div class="row g-2">
-                    <div class="col-6"><input type="text" id="lat-input" class="form-control coord-input" placeholder="Latitude" readonly></div>
-                    <div class="col-6"><input type="text" id="lon-input" class="form-control coord-input" placeholder="Longitude" readonly></div>
+                    <div class="col-6"><input type="text" id="lat-input" class="form-control coord-input" placeholder="Lat" readonly></div>
+                    <div class="col-6"><input type="text" id="lon-input" class="form-control coord-input" placeholder="Lon" readonly></div>
                 </div>
             </div>
             <div id="map"></div>
         </div>
 
         <div class="card">
-            <div class="card-header fw-bold">Step 2 – Classification & Reports</div>
+            <div class="card-header fw-bold">STEP 2 – CLASSIFICATION & REPORTS</div>
             <div class="card-body">
                 <div class="d-flex justify-content-between flex-wrap gap-2">
                     <div class="btn-group flex-wrap gap-2">
                         <button class="btn btn-dark btn-sm filter-btn active" data-type="All">MASTER VIEW</button>
-                        <button class="btn btn-primary btn-sm filter-btn" data-type="Ocean">OCEAN MONITORING</button>
+                        <button class="btn btn-primary btn-sm filter-btn" data-type="Ocean">OCEAN</button>
                         <button class="btn btn-success btn-sm filter-btn" data-type="Pond Water">FRESHWATER POND</button>
                     </div>
                     <div class="dropdown">
                         <button class="btn btn-success fw-bold dropdown-toggle" type="button" data-bs-toggle="dropdown">
                             <i class="fas fa-file-download me-2"></i> EXPORT REPORT
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item fw-bold" href="/export/All">All Sync Data</a></li>
-                            <li><a class="dropdown-item" href="/export/Ocean">Ocean Group</a></li>
-                            <li><a class="dropdown-item" href="/export/Pond">Pond Monitoring</a></li>
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <li><a class="dropdown-item fw-bold" href="/export/All">All Data</a></li>
+                            <li><a class="dropdown-item" href="/export/Ocean">Ocean Data</a></li>
+                            <li><a class="dropdown-item" href="/export/Pond">Pond Data</a></li>
                         </ul>
                     </div>
                 </div>
@@ -83,9 +74,7 @@
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light"><tr id="table-headers"></tr></thead>
-                    <tbody id="data-table-body">
-                        <tr><td colspan="9" class="text-center p-5 text-muted">Awaiting Database Feed...</td></tr>
-                    </tbody>
+                    <tbody id="data-table-body"></tbody>
                 </table>
             </div>
         </div>

@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateTableHeaders(view) {
         const headerRow = document.getElementById('table-header-row');
         // REMOVE DO column when view is Ocean
-        let headers = ['TIME', 'TYPE', 'COORDINATES', 'PH', 'DO (PPM)', 'TDS', 'TEMP', 'EVIDENCE'];
+        let headers = ['TIME', 'TYPE', 'COORDINATES', 'PH', 'DO', 'TDS', 'TEMP', 'EVIDENCE'];
         if (view === 'Ocean') {
             headers = ['TIME', 'TYPE', 'COORDINATES', 'PH', 'TDS', 'TEMP', 'EVIDENCE'];
         }

@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${parseFloat(row.latitude).toFixed(4)}, ${parseFloat(row.longitude).toFixed(4)}</td>
                 <td>${row.ph}</td>`;
             
-            // Add DO value only if not in Ocean view
+            // Add DO value only if NOT in Ocean view
             if (view !== 'Ocean') {
                 cells += `<td>${row.do || '-'}</td>`;
             }

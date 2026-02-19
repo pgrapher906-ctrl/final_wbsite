@@ -18,6 +18,7 @@ def register():
         user = request.form.get('username')
         if User.query.filter((User.email == email) | (User.username == user)).first():
             return render_template('register.html', error="User already exists.")
+        
         new_u = User(username=user, email=email)
         new_u.set_password(request.form.get('password'))
         db.session.add(new_u)
@@ -63,7 +64,7 @@ def export_excel(project):
     wb = Workbook()
     ws = wb.active
     
-    # Header logic including DO for Pond reports
+    # Dynamic Headers based on project requirements
     headers = ['ID', 'Timestamp (IST)', 'Latitude', 'Longitude', 'Type', 'pH', 'Temp (°C)', 'TDS (PPM)']
     if is_pond:
         headers.insert(7, 'DO (PPM)')
@@ -73,7 +74,7 @@ def export_excel(project):
     for r in readings:
         row = [r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, float(r.ph) if r.ph else 0.0, r.temperature]
         if is_pond:
-            row.append(r.do)
+            row.append(r.do) # Add DO only for Pond Water
         row.append(r.tds)
         ws.append(row)
 
@@ -89,7 +90,8 @@ def export_excel(project):
     output = BytesIO()
     wb.save(output)
     output.seek(0)
-    return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=f"NRSC_AquaFlow_{project}_Report.xlsx")
+    filename = f"NRSC_AquaFlow_{project}_Report_{datetime.now().strftime('%d-%b-%Y')}.xlsx"
+    return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=filename)
 
 @main_bp.route('/image/<int:record_id>')
 @login_required

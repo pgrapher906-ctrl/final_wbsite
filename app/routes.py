@@ -57,7 +57,12 @@ def export_excel(project):
 
     # Auto-resize Excel columns for professional look
     for col in ws.columns:
-        ws.column_dimensions[col[0].column_letter].width = 18
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            if cell.value and len(str(cell.value)) > max_length:
+                max_length = len(str(cell.value))
+        ws.column_dimensions[column].width = max_length + 2
         
     output = BytesIO()
     wb.save(output)

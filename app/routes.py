@@ -9,6 +9,7 @@ from io import BytesIO
 
 main_bp = Blueprint('main', __name__)
 
+# FIX: Added Register Route to solve Template BuildError
 @main_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -24,6 +25,7 @@ def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
+            # Update user analytics for the Liquid Profile card
             u.visit_count = (u.visit_count or 0) + 1
             u.last_login = datetime.now().strftime("%d-%m-%Y %H:%M")
             db.session.commit()
@@ -36,6 +38,17 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('main.login'))
+
+@main_bp.route('/')
+@login_required
+def index():
+    return render_template('index.html')
+
+@main_bp.route('/api/data')
+@login_required
+def get_data():
+    readings = WaterData.query.order_by(WaterData.timestamp.desc()).all()
+    return jsonify([r.to_dict() for r in readings])
 
 @main_bp.route('/export/<project>')
 @login_required
@@ -50,8 +63,7 @@ def export_excel(project):
 
     wb = Workbook()
     ws = wb.active
-    headers = ['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'Temp', 'TDS']
-    ws.append(headers)
+    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'Temp', 'TDS'])
     for r in readings:
         ws.append([r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, r.ph, r.temperature, r.tds])
     
@@ -59,14 +71,3 @@ def export_excel(project):
     wb.save(output)
     output.seek(0)
     return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=f"NRSC_{project}_Report.xlsx")
-
-@main_bp.route('/')
-@login_required
-def index():
-    return render_template('index.html')
-
-@main_bp.route('/api/data')
-@login_required
-def get_data():
-    readings = WaterData.query.order_by(WaterData.timestamp.desc()).all()
-    return jsonify([r.to_dict() for r in readings])

@@ -34,6 +34,10 @@
         
         .table-custom thead { background-color: #f1f4f8; border-bottom: 2px solid var(--nrsc-blue); }
         .table-custom th { color: var(--nrsc-blue); font-size: 0.85rem; text-transform: uppercase; }
+
+        /* Styles for Coordinate Boxes */
+        .coord-display { background: #fff; border-bottom: 1px solid #eee; padding: 10px 20px; }
+        .coord-input { font-family: 'Courier New', Courier, monospace; font-weight: bold; color: var(--nrsc-blue); text-align: center; }
     </style>
 </head>
 <body>
@@ -61,6 +65,22 @@
                 <button id="btn-detect" class="btn btn-sm btn-info text-white fw-bold">
                     <i class="fas fa-crosshairs"></i> GET CURRENT GPS
                 </button>
+            </div>
+            <div class="coord-display">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light text-primary fw-bold">LATITUDE</span>
+                            <input type="text" id="lat-input" class="form-control coord-input" placeholder="Waiting..." readonly>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light text-primary fw-bold">LONGITUDE</span>
+                            <input type="text" id="lon-input" class="form-control coord-input" placeholder="Waiting..." readonly>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="card-body p-0">
                 <div id="map"></div> 

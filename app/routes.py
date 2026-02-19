@@ -1,6 +1,7 @@
 import pandas as pd
 import base64
 from io import BytesIO
+from datetime import datetime
 from flask import Blueprint, render_template, request, session, redirect, url_for, send_file, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from app import db
@@ -30,7 +31,7 @@ def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
-            login_user(u) # Opens the door to the dashboard
+            login_user(u)
             return redirect(url_for('main.index'))
     return render_template('login.html')
 
@@ -42,22 +43,52 @@ def index():
 @main_bp.route('/api/data')
 @login_required
 def get_data():
-    readings = WaterData.query.all()
+    readings = WaterData.query.order_by(WaterData.timestamp.desc()).all()
     return jsonify([r.to_dict() for r in readings])
 
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
-    readings = WaterData.query.all()
+    # Define Ocean Grouping
+    ocean_group = [
+        'Open Ocean Water', 'Coastal Water', 'Estuarine Water', 
+        'Deep Sea Water', 'Marine Surface Water'
+    ]
+    
+    if project == "Ocean":
+        readings = WaterData.query.filter(WaterData.water_type.in_(ocean_group)).all()
+    elif project == "Pond":
+        readings = WaterData.query.filter(WaterData.water_type == 'Pond Water').all()
+    else:
+        readings = WaterData.query.all()
+
     wb = Workbook()
     ws = wb.active
-    ws.append(['ID', 'Time', 'Lat', 'Lon', 'Type', 'pH', 'TDS', 'Temp'])
+    ws.append(['ID', 'Timestamp', 'Latitude', 'Longitude', 'Water Type', 'pH', 'TDS', 'Temp (°C)'])
+    
     for r in readings:
-        ws.append([r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, float(r.ph), r.tds, r.temperature])
+        ws.append([
+            r.id, 
+            r.timestamp.strftime('%Y-%m-%d %H:%M'), 
+            r.latitude, 
+            r.longitude, 
+            r.water_type, 
+            float(r.ph) if r.ph else 0.0, 
+            r.tds, 
+            r.temperature
+        ])
+        
     output = BytesIO()
     wb.save(output)
     output.seek(0)
-    return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name="AquaFlow_Data.xlsx")
+    
+    filename = f"NRSC_AquaFlow_{project}_Report_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    return send_file(
+        output, 
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+        as_attachment=True, 
+        download_name=filename
+    )
 
 @main_bp.route('/image/<int:record_id>')
 @login_required

@@ -6,6 +6,7 @@ from app.models.user import User
 from app.models.water_reading import WaterData
 from openpyxl import Workbook
 from io import BytesIO
+import os
 
 main_bp = Blueprint('main', __name__)
 
@@ -14,7 +15,7 @@ def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
-            # Update Dashboard Stats
+            # Update Login Stats
             u.visit_count = (u.visit_count or 0) + 1
             u.last_login = datetime.now().strftime("%d-%m-%Y %H:%M")
             db.session.commit()
@@ -26,17 +27,15 @@ def login():
 @login_required
 def export_excel(project):
     ocean_group = ['Open Ocean Water', 'Coastal Water', 'Estuarine Water', 'Deep Sea Water', 'Marine Surface Water']
-    is_pond = project == "Pond"
     
-    # 1. LOGIC FOR SEPERATE SHEETS
+    # Selection logic for separate or combined sheets
     if project == "Ocean":
         readings = WaterData.query.filter(WaterData.water_type.in_(ocean_group)).all()
         headers = ['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'Temp', 'TDS']
-    elif is_pond:
+    elif project == "Pond":
         readings = WaterData.query.filter(WaterData.water_type == 'Pond Water').all()
         headers = ['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'Temp', 'DO (PPM)', 'TDS']
     else:
-        # COMBINED ALL
         readings = WaterData.query.all()
         headers = ['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'Temp', 'DO', 'TDS']
 
@@ -46,12 +45,12 @@ def export_excel(project):
     
     for r in readings:
         row = [r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, r.ph, r.temperature]
-        if is_pond or project == "All":
+        if project != "Ocean":
             row.append(r.do)
         row.append(r.tds)
         ws.append(row)
 
-    # AUTO-FIX: Auto-resize Excel columns
+    # AUTO-FIX: Column Widths
     for col in ws.columns:
         max_length = 0
         column = col[0].column_letter

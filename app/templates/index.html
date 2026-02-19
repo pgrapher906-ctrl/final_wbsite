@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NRSC AquaFlow | Liquid Viewer</title>
+    <title>NRSC AquaFlow | Premium Edition</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
             --bg-gradient: linear-gradient(135deg, #a8dadc 0%, #457b9d 100%);
@@ -14,33 +14,62 @@
         }
         body { background: var(--bg-gradient); background-attachment: fixed; font-family: 'Segoe UI', sans-serif; color: var(--primary-navy); }
         .navbar { background: var(--liquid-card); backdrop-filter: blur(10px); border-radius: 0 0 35px 35px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-        .liquid-card { background: var(--liquid-card); backdrop-filter: blur(15px); border-radius: 40px; border: 1px solid rgba(255,255,255,0.4); padding: 25px; margin-bottom: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); }
+        .liquid-card { 
+            background: var(--liquid-card); backdrop-filter: blur(15px); border-radius: 40px; 
+            border: 1px solid rgba(255,255,255,0.4); padding: 25px; margin-bottom: 25px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+        }
         #map { height: 400px; border-radius: 30px; border: 1px solid #ddd; margin-top: 15px; }
-        .btn-liquid { border-radius: 20px; padding: 10px 20px; font-weight: 700; transition: 0.3s; border: none; }
-        .btn-filter { background: #457b9d; color: white; }
-        .btn-filter.active { background: #1d3557; box-shadow: 0 0 15px rgba(0,0,0,0.2); }
         
-        /* New Horizontal Management Layout */
-        .mgmt-section { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
-        .analytics-pill { background: rgba(255,255,255,0.5); border-radius: 20px; padding: 10px 20px; display: flex; align-items: center; gap: 10px; font-weight: bold; }
-        .download-group { border-left: 2px solid rgba(0,0,0,0.1); padding-left: 20px; display: flex; gap: 15px; }
-        .dl-icon { color: #457b9d; text-decoration: none; font-size: 1.2rem; transition: 0.2s; }
-        .dl-icon:hover { color: #e63946; transform: scale(1.1); }
+        /* Animated Filter Buttons (In-Box Only) */
+        .btn-filter { 
+            background: #457b9d; color: white; border-radius: 20px; 
+            padding: 12px 25px; font-weight: 700; border: none; 
+            position: relative; overflow: hidden; transition: 0.3s;
+        }
+        .btn-filter.active { background: #1d3557; transform: scale(1.05); }
+
+        /* Splash Animation */
+        .click-splash {
+            position: absolute; background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%; transform: scale(0); animation: btn-splash 0.6s ease-out;
+            pointer-events: none;
+        }
+        @keyframes btn-splash { to { transform: scale(4); opacity: 0; } }
+
+        /* Fish Animation inside Ocean Box */
+        .box-fish {
+            position: absolute; font-size: 1.2rem; color: rgba(255,255,255,0.6);
+            animation: swim-in-box 1.2s linear forwards; pointer-events: none;
+        }
+        @keyframes swim-in-box {
+            from { left: -30px; }
+            to { left: 110%; }
+        }
+
+        /* Iconic Download Section */
+        .dl-container { display: flex; gap: 20px; align-items: center; padding-left: 20px; border-left: 2px solid #ddd; }
+        .dl-icon-btn { font-size: 1.8rem; transition: 0.3s; position: relative; color: #457b9d; text-decoration: none; }
+        .dl-icon-btn:hover { transform: translateY(-5px); color: #e63946; }
+        .dl-tooltip { 
+            position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
+            font-size: 0.65rem; font-weight: 800; opacity: 0; transition: 0.3s;
+        }
+        .dl-icon-btn:hover .dl-tooltip { opacity: 1; }
     </style>
 </head>
 <body>
     <nav class="navbar sticky-top p-3">
-        <div class="container d-flex justify-content-between align-items-center">
+        <div class="container d-flex justify-content-between">
             <span class="navbar-brand fw-bold fs-4"><i class="fas fa-water me-2"></i> NRSC AquaFlow</span>
             <div class="dropdown">
                 <button class="btn btn-light rounded-pill dropdown-toggle fw-bold" type="button" data-bs-toggle="dropdown">
                     <i class="fas fa-user-circle me-2"></i> {{ current_user.username }}
                 </button>
                 <div class="dropdown-menu dropdown-menu-end p-4 liquid-card shadow-lg" style="min-width: 250px; border:none;">
-                    <p class="mb-1"><strong>User:</strong> {{ current_user.username }}</p>
                     <p class="mb-1"><strong>Visits:</strong> {{ current_user.visit_count }}</p>
                     <hr>
-                    <a href="/logout" class="btn btn-liquid btn-danger w-100">SIGN OUT</a>
+                    <a href="/logout" class="btn btn-liquid btn-danger w-100 rounded-pill">SIGN OUT</a>
                 </div>
             </div>
         </div>
@@ -48,38 +77,34 @@
 
     <div class="container mt-5">
         <div class="liquid-card shadow-lg">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold">STEP 1 – SPATIAL DISTRIBUTION</h5>
-                <button id="btn-detect" class="btn btn-liquid btn-filter">GET GPS</button>
-            </div>
-            <div class="row g-3 mt-2">
-                <div class="col-6"><input type="text" id="lat-input" class="form-control rounded-pill text-center border-0 shadow-sm p-3" placeholder="Latitude" readonly></div>
-                <div class="col-6"><input type="text" id="lon-input" class="form-control rounded-pill text-center border-0 shadow-sm p-3" placeholder="Longitude" readonly></div>
-            </div>
-            <div id="map"></div>
-        </div>
-
-        <div class="liquid-card shadow-lg">
             <h5 class="fw-bold mb-4">STEP 2 – CLASSIFICATION & DATA MANAGEMENT</h5>
-            
-            <div class="mgmt-section">
-                <div class="analytics-pill shadow-sm">
-                    <i class="fas fa-fish text-primary"></i> Ocean: <span id="ocean-count" class="text-primary">0</span>
-                </div>
-                <div class="analytics-pill shadow-sm">
-                    <i class="fas fa-faucet text-success"></i> Pond/Ground: <span id="pond-count" class="text-success">0</span>
-                </div>
-
-                <div class="d-flex gap-2 ms-auto me-auto">
-                    <button class="btn btn-liquid btn-filter filter-btn active" data-view="All">MASTER VIEW</button>
-                    <button class="btn btn-liquid btn-filter filter-btn" data-view="Ocean">OCEAN WATER</button>
-                    <button class="btn btn-liquid btn-filter filter-btn" data-view="Pond">POND WATER</button>
+            <div class="d-flex align-items-center justify-content-between flex-wrap">
+                
+                <div class="d-flex gap-3">
+                    <div class="badge bg-white text-primary rounded-pill p-2 px-3 shadow-sm border">
+                        <i class="fas fa-water me-2"></i>Ocean: <span id="ocean-count">0</span>
+                    </div>
+                    <div class="badge bg-white text-success rounded-pill p-2 px-3 shadow-sm border">
+                        <i class="fas fa-faucet-drip me-2"></i>Pond/Ground: <span id="pond-count">0</span>
+                    </div>
                 </div>
 
-                <div class="download-group">
-                    <a href="/export/Ocean" class="dl-icon" title="Ocean Excel"><i class="fas fa-file-excel"></i></a>
-                    <a href="/export/Pond" class="dl-icon" title="Pond Excel"><i class="fas fa-file-code"></i></a>
-                    <a href="/export/All" class="dl-icon" title="Combined Export"><i class="fas fa-file-archive text-danger"></i></a>
+                <div class="d-flex gap-3">
+                    <button class="btn-filter filter-btn active" data-view="All">MASTER VIEW</button>
+                    <button class="btn-filter filter-btn" data-view="Ocean">OCEAN WATER</button>
+                    <button class="btn-filter filter-btn" data-view="Pond">POND WATER</button>
+                </div>
+
+                <div class="dl-container">
+                    <a href="/export/Ocean" class="dl-icon-btn" title="Ocean Report">
+                        <i class="fas fa-fish"></i><span class="dl-tooltip text-primary">OCEAN</span>
+                    </a>
+                    <a href="/export/Pond" class="dl-icon-btn" title="Pond Report">
+                        <i class="fas fa-faucet"></i><span class="dl-tooltip text-success">POND</span>
+                    </a>
+                    <a href="/export/All" class="dl-icon-btn" title="Full Archive">
+                        <i class="fas fa-file-zipper"></i><span class="dl-tooltip text-danger">COMBINED</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -96,9 +121,5 @@
             </div>
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-</body>
-</html>

@@ -2,27 +2,53 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AquaFlow | Create Account</title>
+    <title>NRSC AquaFlow | Register Operator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background: radial-gradient(circle at center, #1a1a2e, #121212); color: #fff; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0; }
-        .card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); padding: 40px; border-radius: 20px; border: 1px solid rgba(0, 229, 255, 0.2); width: 350px; text-align: center; }
-        h2 { color: #00E5FF; text-transform: uppercase; letter-spacing: 3px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: rgba(0,0,0,0.5); border: 1px solid #333; color: #00E5FF; border-radius: 8px; }
-        button { width: 100%; padding: 12px; background: #00E5FF; border: none; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.3s; }
-        .link { margin-top: 15px; font-size: 0.85rem; }
-        .link a { color: #00E5FF; text-decoration: none; }
+        body { 
+            background: linear-gradient(135deg, #a8dadc 0%, #457b9d 100%);
+            height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .register-box {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 50px;
+            border-radius: 50px;
+            width: 380px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+        h2 { color: #1d3557; font-weight: 800; margin-bottom: 5px; text-transform: uppercase; }
+        p { color: #457b9d; font-size: 0.9rem; margin-bottom: 25px; }
+        input { 
+            width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 25px;
+            border: 1px solid #cdd4da; outline: none; box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.5);
+        }
+        button {
+            width: 100%; padding: 15px; background: #2a9d8f; color: white;
+            border: none; border-radius: 25px; font-weight: 700; cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover { background: #1d3557; transform: translateY(-2px); }
+        .link { margin-top: 20px; font-size: 0.85rem; color: #1d3557; }
+        .link a { color: #457b9d; text-decoration: none; font-weight: 700; }
     </style>
 </head>
 <body>
-    <div class="card">
+    <div class="register-box">
+        <i class="fas fa-user-plus fa-3x" style="color: #2a9d8f; margin-bottom: 15px;"></i>
         <h2>REGISTRATION</h2>
+        <p>Establish New Operator Credentials</p>
         <form method="POST">
-            <input type="text" name="username" placeholder="CHOOSE USERNAME" required>
-            <input type="email" name="email" placeholder="EMAIL ADDRESS" required>
-            <input type="password" name="password" placeholder="CREATE PASSWORD" required>
-            <button type="submit">CREATE OPERATOR PROFILE</button>
+            <input type="text" name="username" placeholder="Choose Username" required>
+            <input type="email" name="email" placeholder="Official Email" required>
+            <input type="password" name="password" placeholder="Create Password" required>
+            <button type="submit">CREATE ACCOUNT</button>
         </form>
-        <div class="link">Existing Operator? <a href="{{ url_for('main.login') }}">Login</a></div>
+        <div class="link">Already Registered? <a href="{{ url_for('main.login') }}">Login here</a></div>
     </div>
 </body>
 </html>

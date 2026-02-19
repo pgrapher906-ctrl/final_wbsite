@@ -8,7 +8,6 @@ from app import db
 from app.models.user import User
 from app.models.water_reading import WaterData
 from openpyxl import Workbook
-from openpyxl.utils import get_column_letter
 
 main_bp = Blueprint('main', __name__)
 
@@ -32,7 +31,7 @@ def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
-            # Update visit stats
+            # Update visit stats on successful login
             u.visit_count = (u.visit_count or 0) + 1
             db.session.commit()
             login_user(u)
@@ -53,60 +52,49 @@ def get_data():
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
-    ocean_group = [
-        'Open Ocean Water', 'Coastal Water', 'Estuarine Water', 
-        'Deep Sea Water', 'Marine Surface Water'
-    ]
+    ocean_group = ['Open Ocean Water', 'Coastal Water', 'Estuarine Water', 'Deep Sea Water', 'Marine Surface Water']
+    is_pond = project == "Pond" or project == "Pond Water"
     
     if project == "Ocean":
         readings = WaterData.query.filter(WaterData.water_type.in_(ocean_group)).all()
-    elif project == "Pond":
+    elif is_pond:
         readings = WaterData.query.filter(WaterData.water_type == 'Pond Water').all()
     else:
         readings = WaterData.query.all()
 
     wb = Workbook()
     ws = wb.active
-    ws.append(['ID', 'Timestamp (IST)', 'Latitude', 'Longitude', 'Water Category', 'pH', 'TDS (mg/L)', 'Temp (°C)'])
+    
+    # Dynamic Headers for Excel based on project requirements
+    if is_pond:
+        headers = ['ID', 'Timestamp (IST)', 'Latitude', 'Longitude', 'Type', 'pH', 'Temp (°C)', 'DO (PPM)', 'TDS (PPM)']
+    else:
+        headers = ['ID', 'Timestamp (IST)', 'Latitude', 'Longitude', 'Type', 'pH', 'Temp (°C)', 'TDS (PPM)']
+    
+    ws.append(headers)
     
     for r in readings:
-        ws.append([
-            r.id, 
-            r.timestamp.strftime('%Y-%m-%d %H:%M'), 
-            r.latitude, 
-            r.longitude, 
-            r.water_type, 
-            float(r.ph) if r.ph else 0.0, 
-            r.tds, 
-            r.temperature
-        ])
+        row = [r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, float(r.ph) if r.ph else 0.0, r.temperature]
+        if is_pond:
+            row.append(r.do) # Add DO only for Pond Water
+        row.append(r.tds)
+        ws.append(row)
 
-    # =====================================================
-    # FIX: AUTO-ADJUST COLUMN WIDTHS (Prevents hiding text)
-    # =====================================================
+    # Auto-adjust column widths so text is not hidden
     for col in ws.columns:
         max_length = 0
-        column = col[0].column_letter 
+        column = col[0].column_letter
         for cell in col:
-            try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
-            except:
-                pass
+            if cell.value and len(str(cell.value)) > max_length:
+                max_length = len(str(cell.value))
         ws.column_dimensions[column].width = max_length + 2
-    # =====================================================
         
     output = BytesIO()
     wb.save(output)
     output.seek(0)
     
-    filename = f"NRSC_AquaFlow_{project}_Data_{datetime.now().strftime('%d-%b-%Y')}.xlsx"
-    return send_file(
-        output, 
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-        as_attachment=True, 
-        download_name=filename
-    )
+    filename = f"NRSC_AquaFlow_{project}_Report_{datetime.now().strftime('%d-%b-%Y')}.xlsx"
+    return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=filename)
 
 @main_bp.route('/image/<int:record_id>')
 @login_required

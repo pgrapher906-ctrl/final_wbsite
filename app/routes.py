@@ -31,28 +31,10 @@ def login():
             return redirect(url_for('main.index'))
     return render_template('login.html')
 
-@main_bp.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('main.login'))
-
-@main_bp.route('/')
-@login_required
-def index():
-    return render_template('index.html')
-
-@main_bp.route('/api/data')
-@login_required
-def get_data():
-    readings = WaterData.query.order_by(WaterData.timestamp.desc()).all()
-    return jsonify([r.to_dict() for r in readings])
-
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
     ocean_group = ['Open Ocean Water', 'Coastal Water', 'Estuarine Water', 'Deep Sea Water', 'Marine Surface Water']
-    # Grouped Pond types as requested
     pond_group = ['Pond Water', 'Drinking Water', 'Ground Water', 'Borewell Water']
     
     if project == "Ocean":
@@ -72,3 +54,14 @@ def export_excel(project):
     wb.save(output)
     output.seek(0)
     return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=f"NRSC_{project}_Report.xlsx")
+
+@main_bp.route('/api/data')
+@login_required
+def get_data():
+    readings = WaterData.query.order_by(WaterData.timestamp.desc()).all()
+    return jsonify([r.to_dict() for r in readings])
+
+@main_bp.route('/')
+@login_required
+def index():
+    return render_template('index.html')

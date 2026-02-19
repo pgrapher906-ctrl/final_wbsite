@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${row.ph}</td><td>${row.tds}</td>
                 ${isPondView ? `<td>${row.do || '-'}</td>` : ''}
                 <td>${row.temperature}°C</td>
-                <td>${row.has_image ? `<a href="/image/${row.id}" target="_blank" class="btn btn-sm btn-link">View</a>` : '-'}</td>
+                <td>${row.has_image ? `<a href="/image/${row.id}" target="_blank" class="btn btn-sm btn-link text-primary">View</a>` : '-'}</td>
             `;
             tableBody.appendChild(tr);
         });
@@ -44,7 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
         renderDashboard(allData);
     });
 
-    // Handle Map Navigation
     document.getElementById('btn-detect').addEventListener('click', function() {
         navigator.geolocation.getCurrentPosition(pos => {
             map.setView([pos.coords.latitude, pos.coords.longitude], 14);

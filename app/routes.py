@@ -18,7 +18,6 @@ def register():
         user = request.form.get('username')
         if User.query.filter((User.email == email) | (User.username == user)).first():
             return render_template('register.html', error="User already exists.")
-        
         new_u = User(username=user, email=email)
         new_u.set_password(request.form.get('password'))
         db.session.add(new_u)
@@ -31,7 +30,7 @@ def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
-            # Update visit stats on successful login
+            # Update visit count for the navbar dashboard
             u.visit_count = (u.visit_count or 0) + 1
             db.session.commit()
             login_user(u)
@@ -65,22 +64,21 @@ def export_excel(project):
     wb = Workbook()
     ws = wb.active
     
-    # Dynamic Headers for Excel based on project requirements
+    # Dynamic Headers based on project requirements
+    headers = ['ID', 'Timestamp (IST)', 'Latitude', 'Longitude', 'Type', 'pH', 'Temp (°C)', 'TDS (PPM)']
     if is_pond:
-        headers = ['ID', 'Timestamp (IST)', 'Latitude', 'Longitude', 'Type', 'pH', 'Temp (°C)', 'DO (PPM)', 'TDS (PPM)']
-    else:
-        headers = ['ID', 'Timestamp (IST)', 'Latitude', 'Longitude', 'Type', 'pH', 'Temp (°C)', 'TDS (PPM)']
+        headers.insert(7, 'DO (PPM)')
     
     ws.append(headers)
     
     for r in readings:
         row = [r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, float(r.ph) if r.ph else 0.0, r.temperature]
         if is_pond:
-            row.append(r.do) # Add DO only for Pond Water
+            row.append(r.do) # Adding DO specifically for Freshwater Pond reports
         row.append(r.tds)
         ws.append(row)
 
-    # Auto-adjust column widths so text is not hidden
+    # AUTO-FIX: Resizes columns so text like coordinates or timestamps are never hidden
     for col in ws.columns:
         max_length = 0
         column = col[0].column_letter
@@ -92,7 +90,6 @@ def export_excel(project):
     output = BytesIO()
     wb.save(output)
     output.seek(0)
-    
     filename = f"NRSC_AquaFlow_{project}_Report_{datetime.now().strftime('%d-%b-%Y')}.xlsx"
     return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=filename)
 
@@ -101,6 +98,7 @@ def export_excel(project):
 def get_image(record_id):
     r = WaterData.query.get(record_id)
     if r and r.image_path:
+        # Properly decode Base64 data strings
         img_data = r.image_path.split(",")[1] if "," in r.image_path else r.image_path
         return send_file(BytesIO(base64.b64decode(img_data)), mimetype='image/jpeg')
     return "Not found", 404

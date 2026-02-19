@@ -10,27 +10,30 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        :root { --primary-blue: #004080; --ocean-blue: #0077be; --pond-green: #4a7c59; --bg-light: #f4f6f9; }
-        body { background-color: var(--bg-light); font-family: 'Segoe UI', sans-serif; }
+        :root { --nrsc-blue: #004080; --ocean-cyan: #0077be; --pond-olive: #4a7c59; --bg-light: #f8f9fa; }
+        body { background-color: var(--bg-light); font-family: 'Segoe UI', system-ui, sans-serif; }
         
-        .navbar { background-color: var(--primary-blue); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .navbar-brand { font-weight: 700; color: white !important; font-size: 1.25rem; }
-        .nav-stats { color: #d1ecf1; font-size: 0.9rem; margin-right: 15px; }
+        .navbar { background-color: var(--nrsc-blue); border-bottom: 3px solid #ffc107; }
+        .navbar-brand { font-weight: 800; letter-spacing: 0.5px; color: white !important; }
+        .nav-stats { color: #e9ecef; font-size: 0.85rem; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 15px; }
         
-        .card { border: none; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 24px; }
-        .card-header { background: white; border-bottom: 1px solid #eee; padding: 15px 20px; }
-        .step-label { color: var(--primary-blue); font-weight: 700; margin: 0; }
+        .card { border: 1px solid #dee2e6; border-radius: 10px; overflow: hidden; margin-bottom: 25px; }
+        .card-header { background-color: #fff; padding: 12px 20px; border-bottom: 2px solid #f1f1f1; }
+        .step-label { color: var(--nrsc-blue); font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
         
-        #map { height: 400px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 1; }
+        #map { height: 450px; width: 100%; z-index: 1; }
         
-        .btn-detect { background-color: #17a2b8; color: white; font-weight: 600; }
-        .btn-ocean { background-color: var(--ocean-blue); color: white; border: none; }
-        .btn-ocean:hover { background-color: #005f99; color: white; }
-        .btn-pond { background-color: var(--pond-green); color: white; border: none; }
-        .btn-pond:hover { background-color: #3a6246; color: white; }
+        /* Category Badges for Table */
+        .badge-ocean { background-color: var(--ocean-cyan); color: white; }
+        .badge-pond { background-color: var(--pond-olive); color: white; }
         
-        .table-custom thead { background-color: var(--primary-blue); color: white; }
-        .filter-active { outline: 3px solid #ffc107; outline-offset: -3px; }
+        .btn-ocean { background-color: var(--ocean-cyan); color: white; border: none; transition: 0.2s; }
+        .btn-ocean:hover, .btn-ocean.active { background-color: #00568a; color: white; box-shadow: 0 0 0 3px rgba(0,119,190,0.3); }
+        .btn-pond { background-color: var(--pond-olive); color: white; border: none; }
+        .btn-pond:hover, .btn-pond.active { background-color: #355840; color: white; box-shadow: 0 0 0 3px rgba(74,124,89,0.3); }
+        
+        .table-custom thead { background-color: #f1f4f8; border-bottom: 2px solid var(--nrsc-blue); }
+        .table-custom th { color: var(--nrsc-blue); font-size: 0.85rem; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -38,14 +41,14 @@
     <nav class="navbar sticky-top mb-4">
         <div class="container">
             <a class="navbar-brand" href="#">
-                <i class="fas fa-satellite-dish"></i> NRSC AquaFlow Viewer
+                <i class="fas fa-globe-asia me-2"></i> NRSC AquaFlow Viewer
             </a>
-            <div class="d-flex align-items-center">
-                <div class="nav-stats d-none d-md-block text-end">
-                    <div>User: <strong class="text-white">{{ current_user.username }}</strong></div>
-                    <div>Total Visits: <strong class="text-white">{{ current_user.visit_count }}</strong></div>
+            <div class="d-flex align-items-center text-white">
+                <div class="nav-stats d-none d-md-block text-end me-3">
+                    <div>AUTHENTICATED: <strong>{{ current_user.username }}</strong></div>
+                    <div>SESSION COUNT: <strong>{{ current_user.visit_count }}</strong></div>
                 </div>
-                <a href="/logout" class="btn btn-sm btn-outline-light">Logout</a>
+                <a href="/logout" class="btn btn-sm btn-warning fw-bold">SIGN OUT</a>
             </div>
         </div>
     </nav>
@@ -53,50 +56,43 @@
     <div class="container">
         
         <div class="card">
-            <div class="card-header"><h5 class="step-label">Step 1 – Location Filter</h5></div>
-            <div class="card-body">
-                <button id="btn-detect" class="btn btn-detect mb-3">
-                    <i class="fas fa-location-arrow"></i> Detect User Location
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="step-label mb-0">Step 1 – Spatial Distribution</h5>
+                <button id="btn-detect" class="btn btn-sm btn-info text-white fw-bold">
+                    <i class="fas fa-crosshairs"></i> GET CURRENT GPS
                 </button>
-                <div class="row g-3 mb-3">
-                    <div class="col-md-6">
-                        <input type="text" id="lat-input" class="form-control" placeholder="Latitude" readonly>
-                    </div>
-                    <div class="col-md-6">
-                        <input type="text" id="lon-input" class="form-control" placeholder="Longitude" readonly>
-                    </div>
-                </div>
+            </div>
+            <div class="card-body p-0">
                 <div id="map"></div> 
             </div>
         </div>
 
         <div class="card">
-            <div class="card-header"><h5 class="step-label">Step 2 – Project & Category Selection</h5></div>
+            <div class="card-header"><h5 class="step-label">Step 2 – Classification & Reports</h5></div>
             <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-lg-8">
-                        <label class="d-block mb-2 fw-bold text-muted small">FILTER BY CATEGORY</label>
-                        <div class="btn-group flex-wrap gap-1">
-                            <button class="btn btn-secondary filter-btn" data-type="All">Show All</button>
-                            <button class="btn btn-ocean filter-btn" data-type="Open Ocean Water">Open Ocean</button>
-                            <button class="btn btn-ocean filter-btn" data-type="Coastal Water">Coastal</button>
-                            <button class="btn btn-ocean filter-btn" data-type="Estuarine Water">Estuarine</button>
-                            <button class="btn btn-ocean filter-btn" data-type="Deep Sea Water">Deep Sea</button>
-                            <button class="btn btn-ocean filter-btn" data-type="Marine Surface Water">Marine Surface</button>
-                            <button class="btn btn-pond filter-btn" data-type="Pond Water">Pond Water</button>
+                <div class="row align-items-center">
+                    <div class="col-xl-9">
+                        <p class="text-muted small fw-bold mb-2">FILTER BY WATER BODY CLASSIFICATION:</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-dark btn-sm filter-btn active" data-type="All">MASTER VIEW</button>
+                            <button class="btn btn-ocean btn-sm filter-btn" data-type="Open Ocean Water">OPEN OCEAN</button>
+                            <button class="btn btn-ocean btn-sm filter-btn" data-type="Coastal Water">COASTAL</button>
+                            <button class="btn btn-ocean btn-sm filter-btn" data-type="Estuarine Water">ESTUARINE</button>
+                            <button class="btn btn-ocean btn-sm filter-btn" data-type="Deep Sea Water">DEEP SEA</button>
+                            <button class="btn btn-ocean btn-sm filter-btn" data-type="Marine Surface Water">MARINE SURFACE</button>
+                            <button class="btn btn-pond btn-sm filter-btn" data-type="Pond Water">FRESHWATER POND</button>
                         </div>
                     </div>
-                    <div class="col-lg-4 text-lg-end">
-                        <label class="d-block mb-2 fw-bold text-muted small">REPORTS</label>
+                    <div class="col-xl-3 text-xl-end mt-3 mt-xl-0">
                         <div class="dropdown">
-                            <button class="btn btn-success dropdown-toggle w-100" type="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-file-excel"></i> Export XLSX
+                            <button class="btn btn-success fw-bold dropdown-toggle w-100" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-file-download me-2"></i> EXPORT REPORT
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="/export/All">Everything (Full Dump)</a></li>
+                            <ul class="dropdown-menu shadow">
+                                <li><a class="dropdown-item fw-bold" href="/export/All">All Synchronized Data</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="/export/Ocean">All Ocean Monitoring</a></li>
-                                <li><a class="dropdown-item" href="/export/Pond">Pond Monitoring Only</a></li>
+                                <li><a class="dropdown-item" href="/export/Ocean">Ocean Group (All Subtypes)</a></li>
+                                <li><a class="dropdown-item" href="/export/Pond">Pond Monitoring Data</a></li>
                             </ul>
                         </div>
                     </div>
@@ -105,23 +101,24 @@
         </div>
 
         <div class="card">
-            <div class="card-header"><h5 class="step-label">Monitoring Data Logs</h5></div>
+            <div class="card-header"><h5 class="step-label">Live Monitoring Logs</h5></div>
             <div class="table-responsive">
-                <table class="table table-custom table-hover mb-0">
+                <table class="table table-custom table-hover align-middle mb-0">
                     <thead>
                         <tr>
-                            <th>Date/Time</th>
-                            <th>Type</th>
-                            <th>Lat</th>
-                            <th>Lon</th>
-                            <th>pH</th>
-                            <th>TDS</th>
+                            <th>Acquisition Time</th>
+                            <th>Classification</th>
+                            <th>Coordinates</th>
+                            <th>pH Level</th>
+                            <th>TDS (ppm)</th>
                             <th>Temp</th>
-                            <th>Evidence</th>
+                            <th class="text-center">Evidence</th>
                         </tr>
                     </thead>
                     <tbody id="data-table-body">
-                        <tr><td colspan="8" class="text-center p-4 text-muted">Loading database...</td></tr>
+                        <tr><td colspan="7" class="text-center p-5 text-muted">
+                            <div class="spinner-border spinner-border-sm me-2"></div> Querying Neon Database...
+                        </td></tr>
                     </tbody>
                 </table>
             </div>

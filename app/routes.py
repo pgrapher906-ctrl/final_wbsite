@@ -11,26 +11,12 @@ from openpyxl import Workbook
 
 main_bp = Blueprint('main', __name__)
 
-@main_bp.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        user = request.form.get('username')
-        if User.query.filter((User.email == email) | (User.username == user)).first():
-            return render_template('register.html', error="User already exists.")
-        
-        new_u = User(username=user, email=email)
-        new_u.set_password(request.form.get('password'))
-        db.session.add(new_u)
-        db.session.commit()
-        return redirect(url_for('main.login'))
-    return render_template('register.html')
-
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
+            # Update visit count for user metrics
             u.visit_count = (u.visit_count or 0) + 1
             db.session.commit()
             login_user(u)
@@ -64,7 +50,7 @@ def export_excel(project):
     wb = Workbook()
     ws = wb.active
     
-    # Dynamic Headers based on project requirements
+    # Dynamic Headers: Pond reports include DO column
     headers = ['ID', 'Timestamp (IST)', 'Latitude', 'Longitude', 'Type', 'pH', 'Temp (°C)', 'TDS (PPM)']
     if is_pond:
         headers.insert(7, 'DO (PPM)')
@@ -74,11 +60,11 @@ def export_excel(project):
     for r in readings:
         row = [r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, float(r.ph) if r.ph else 0.0, r.temperature]
         if is_pond:
-            row.append(r.do) # Add DO only for Pond Water
+            row.append(r.do) # Add DO for Freshwater reports
         row.append(r.tds)
         ws.append(row)
 
-    # AUTO-FIX: Automatically adjust column widths so text is never hidden
+    # AUTO-FIX: Automatically adjust column widths so no data is hidden
     for col in ws.columns:
         max_length = 0
         column = col[0].column_letter
@@ -90,8 +76,7 @@ def export_excel(project):
     output = BytesIO()
     wb.save(output)
     output.seek(0)
-    filename = f"NRSC_AquaFlow_{project}_Report_{datetime.now().strftime('%d-%b-%Y')}.xlsx"
-    return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=filename)
+    return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=f"NRSC_AquaFlow_{project}_Report.xlsx")
 
 @main_bp.route('/image/<int:record_id>')
 @login_required
@@ -101,8 +86,3 @@ def get_image(record_id):
         img_data = r.image_path.split(",")[1] if "," in r.image_path else r.image_path
         return send_file(BytesIO(base64.b64decode(img_data)), mimetype='image/jpeg')
     return "Not found", 404
-
-@main_bp.route('/logout')
-def logout():
-    logout_user()
-    return redirect(url_for('main.login'))

@@ -14,13 +14,18 @@ def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
-            # Update analytics for the Liquid Theme profile box
+            # Update user analytics for the Liquid Profile card
             u.visit_count = (u.visit_count or 0) + 1
             u.last_login = datetime.now().strftime("%d-%m-%Y %H:%M")
             db.session.commit()
             login_user(u)
             return redirect(url_for('main.index'))
     return render_template('login.html')
+
+@main_bp.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('main.login'))
 
 @main_bp.route('/export/<project>')
 @login_required
@@ -37,6 +42,7 @@ def export_excel(project):
 
     wb = Workbook()
     ws = wb.active
+    # Headers match the sleek dashboard columns
     headers = ['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'Temp', 'TDS']
     if is_pond or project == "All":
         headers.insert(7, 'DO (PPM)')
@@ -49,6 +55,7 @@ def export_excel(project):
         row.append(r.tds)
         ws.append(row)
 
+    # Auto-resize Excel columns for professional look
     for col in ws.columns:
         ws.column_dimensions[col[0].column_letter].width = 18
         
@@ -67,8 +74,3 @@ def index():
 def get_data():
     readings = WaterData.query.order_by(WaterData.timestamp.desc()).all()
     return jsonify([r.to_dict() for r in readings])
-
-@main_bp.route('/logout')
-def logout():
-    logout_user()
-    return redirect(url_for('main.login'))

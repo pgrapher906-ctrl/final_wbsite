@@ -4,8 +4,6 @@ from datetime import datetime
 from app import db
 from app.models.user import User
 from app.models.water_reading import WaterData
-from openpyxl import Workbook
-from io import BytesIO
 
 main_bp = Blueprint('main', __name__)
 
@@ -15,6 +13,7 @@ def login():
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
             u.visit_count = (u.visit_count or 0) + 1
+            # Exact date/time tracker for profile dropdown
             u.last_login = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             db.session.commit()
             login_user(u)
@@ -31,30 +30,3 @@ def get_data():
 @login_required
 def index():
     return render_template('index.html')
-
-@main_bp.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('main.login'))
-
-@main_bp.route('/export/<project>')
-@login_required
-def export_excel(project):
-    ocean_group = ['Open Ocean Water', 'Coastal Water', 'Estuarine Water', 'Deep Sea Water', 'Marine Surface Water']
-    pond_group = ['Pond Water', 'Drinking Water', 'Ground Water', 'Borewell Water']
-    if project == "Ocean":
-        readings = WaterData.query.filter(WaterData.water_type.in_(ocean_group)).all()
-    elif project == "Pond":
-        readings = WaterData.query.filter(WaterData.water_type.in_(pond_group)).all()
-    else:
-        readings = WaterData.query.all()
-    wb = Workbook()
-    ws = wb.active
-    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'DO (PPM)', 'Temp', 'TDS'])
-    for r in readings:
-        ws.append([r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, r.ph, r.do, r.temperature, r.tds])
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
-    return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=f"NRSC_{project}_Report.xlsx")

@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', function() {
         tableBody.innerHTML = '';
         markersLayer.clearLayers(); 
 
-        // Update stats
         const oceanCount = allData.filter(d => oceanTypes.includes(d.water_type.toLowerCase())).length;
         const pondCount = allData.filter(d => pondGroupTypes.includes(d.water_type.toLowerCase())).length;
         document.getElementById('ocean-count').innerText = oceanCount;
@@ -20,30 +19,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
         data.forEach(row => {
             const isOcean = oceanTypes.includes(row.water_type.toLowerCase());
+            if (row.latitude && row.longitude) {
+                L.circleMarker([row.latitude, row.longitude], {
+                    radius: 11, fillColor: isOcean ? '#457b9d' : '#2a9d8f', color: "#fff", weight: 3, fillOpacity: 0.9
+                }).bindPopup(`<b>${row.water_type}</b>`).addTo(markersLayer);
+            }
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${new Date(row.timestamp).toLocaleTimeString()}</td>
                 <td><span class="badge rounded-pill ${isOcean ? 'bg-primary' : 'bg-success'}">${row.water_type}</span></td>
-                <td>${row.latitude}, ${row.longitude}</td>
+                <td>${parseFloat(row.latitude).toFixed(4)}, ${parseFloat(row.longitude).toFixed(4)}</td>
                 <td>${row.ph}</td><td>${row.tds}</td><td>${row.temperature}°C</td>
-                <td><a href="/image/${row.id}" target="_blank" class="text-primary fw-bold">View</a></td>
+                <td><a href="/image/${row.id}" target="_blank" class="text-primary fw-bold text-decoration-none">View</a></td>
             `;
             tableBody.appendChild(tr);
         });
     }
 
-    // In-Box Animation Trigger
     function triggerBoxAnimation(btn, view) {
         const splash = document.createElement('span');
         splash.className = 'click-splash';
-        splash.style.left = '50%';
-        splash.style.top = '50%';
         btn.appendChild(splash);
         setTimeout(() => splash.remove(), 600);
 
         if (view !== 'All') {
             const icon = document.createElement('i');
-            icon.className = `fas ${view === 'Ocean' ? 'fa-fish' : 'fa-droplet'} box-fish`;
+            icon.className = `fas ${view === 'Ocean' ? 'fa-fish' : 'fa-droplet'} box-icon`;
             icon.style.top = '35%';
             btn.appendChild(icon);
             setTimeout(() => icon.remove(), 1200);
@@ -58,15 +59,21 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const view = this.getAttribute('data-view');
-            triggerBoxAnimation(this, view); // Animation stays in-box
-            
+            triggerBoxAnimation(this, view);
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            
             const filtered = (view === 'All') ? allData : allData.filter(d => 
                 view === 'Ocean' ? oceanTypes.includes(d.water_type.toLowerCase()) : pondGroupTypes.includes(d.water_type.toLowerCase())
             );
             renderDashboard(filtered);
+        });
+    });
+
+    document.getElementById('btn-detect').addEventListener('click', function() {
+        navigator.geolocation.getCurrentPosition(pos => {
+            document.getElementById('lat-input').value = pos.coords.latitude.toFixed(6);
+            document.getElementById('lon-input').value = pos.coords.longitude.toFixed(6);
+            map.setView([pos.coords.latitude, pos.coords.longitude], 14);
         });
     });
 });

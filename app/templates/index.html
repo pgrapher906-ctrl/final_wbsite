@@ -3,87 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <title>NRSC AquaFlow Viewer</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --nrsc-blue: #004080; --ocean-cyan: #0077be; --pond-olive: #4a7c59; --bg-light: #f8f9fa; }
-        body { background-color: var(--bg-light); font-family: 'Segoe UI', sans-serif; }
-        .navbar { background-color: var(--nrsc-blue); border-bottom: 3px solid #ffc107; padding: 10px 0; }
-        .navbar-brand { font-weight: 800; color: white !important; }
-        .profile-info { color: #004080; font-size: 0.9rem; min-width: 240px; padding: 15px; }
-        .card { border: 1px solid #dee2e6; border-radius: 10px; overflow: hidden; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        #map { height: 450px; width: 100%; z-index: 1; }
-        .badge-ocean { background-color: var(--ocean-cyan); color: white; }
-        .badge-pond { background-color: var(--pond-olive); color: white; }
-        .coord-display { background: #fff; border-bottom: 1px solid #eee; padding: 10px 20px; }
-        .coord-input { font-family: monospace; font-weight: bold; color: var(--nrsc-blue); text-align: center; border: 1px solid #ddd; }
+        body { background-color: #0b0b0e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
+        .navbar { background-color: #161625; border-bottom: 2px solid #00E5FF; box-shadow: 0 4px 20px rgba(0, 229, 255, 0.2); }
+        .logo-text { font-weight: 800; color: #00E5FF !important; letter-spacing: 1px; }
+        .card { background: #161625; border: 1px solid #2a2a3d; border-radius: 15px; margin-bottom: 25px; }
+        .card-header { background: #1c1c2e; color: #00E5FF; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #2a2a3d; }
+        #map { height: 450px; border-radius: 0 0 15px 15px; filter: grayscale(1) invert(1) hue-rotate(180deg); }
+        .btn-neon { background: transparent; border: 1px solid #00E5FF; color: #00E5FF; font-weight: bold; transition: 0.3s; }
+        .btn-neon:hover { background: #00E5FF; color: #000; box-shadow: 0 0 15px #00E5FF; }
+        .coord-display { background: #0b0b0e; padding: 15px; border-bottom: 1px solid #2a2a3d; }
+        .coord-input { background: #161625; border: 1px solid #2a2a3d; color: #00E5FF; font-family: monospace; text-align: center; }
+        .table { color: #e0e0e0; }
+        .table-dark { background-color: #161625; }
+        .badge-ocean { background-color: #004e92; color: #00E5FF; border: 1px solid #00E5FF; }
+        .badge-pond { background-color: #1b4d3e; color: #00ff88; border: 1px solid #00ff88; }
     </style>
 </head>
 <body>
-    <nav class="navbar sticky-top mb-4">
+    <nav class="navbar navbar-dark sticky-top p-2">
         <div class="container">
-            <a class="navbar-brand" href="#"><i class="fas fa-satellite-dish me-2"></i> NRSC AquaFlow</a>
+            <a class="navbar-brand logo-text" href="#">
+                <i class="fas fa-satellite-dish me-2"></i>NRSC AQUA<span style="color:#fff">FLOW</span>
+            </a>
             <div class="dropdown">
-                <button class="btn btn-outline-light dropdown-toggle fw-bold" type="button" data-bs-toggle="dropdown">
+                <button class="btn btn-sm btn-neon dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     <i class="fas fa-user-circle me-1"></i> {{ current_user.username }}
                 </button>
-                <div class="dropdown-menu dropdown-menu-end shadow border-0 profile-info">
-                    <div><b>Profile Information</b></div>
-                    <hr>
-                    <div class="mb-1 text-muted">User: <span class="text-dark">{{ current_user.username }}</span></div>
-                    <div class="mb-1 text-muted">Total Visits: <span class="text-dark">{{ current_user.visit_count }}</span></div>
-                    <div class="mb-2 text-muted">Last Session:<br><span class="text-dark small">{{ current_user.last_login or 'Just now' }}</span></div>
-                    <hr>
-                    <a href="/logout" class="btn btn-sm btn-warning w-100 fw-bold">SIGN OUT</a>
+                <div class="dropdown-menu dropdown-menu-end bg-dark text-light border-info">
+                    <div class="px-3 py-2 small"><b>Operator:</b> {{ current_user.username }}</div>
+                    <div class="px-3 py-1 small"><b>Visits:</b> {{ current_user.visit_count }}</div>
+                    <div class="px-3 py-1 small"><b>Last Session:</b><br>{{ current_user.last_login or 'First Time' }}</div>
+                    <hr class="dropdown-divider bg-secondary">
+                    <a class="dropdown-item text-danger fw-bold" href="/logout">TERMINATE SESSION</a>
                 </div>
             </div>
         </div>
     </nav>
 
-    <div class="container">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center bg-white py-3">
-                <h6 class="fw-bold mb-0 text-primary">STEP 1 – SPATIAL DISTRIBUTION</h6>
-                <button id="btn-detect" class="btn btn-sm btn-info text-white fw-bold">GET GPS</button>
+    <div class="container mt-4">
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-crosshairs me-2"></i> Spatial Analytics</span>
+                <button id="btn-detect" class="btn btn-sm btn-neon">INITIALIZE GPS</button>
             </div>
             <div class="coord-display">
                 <div class="row g-2">
-                    <div class="col-6"><input type="text" id="lat-input" class="form-control coord-input" placeholder="Latitude" readonly></div>
-                    <div class="col-6"><input type="text" id="lon-input" class="form-control coord-input" placeholder="Longitude" readonly></div>
+                    <div class="col-6"><input type="text" id="lat-input" class="form-control coord-input" placeholder="LATITUDE" readonly></div>
+                    <div class="col-6"><input type="text" id="lon-input" class="form-control coord-input" placeholder="LONGITUDE" readonly></div>
                 </div>
             </div>
             <div id="map"></div>
         </div>
 
-        <div class="card">
-            <div class="card-header bg-white py-3"><h6 class="fw-bold mb-0 text-primary">STEP 2 – CLASSIFICATION & DATA EXPORT</h6></div>
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-7 mb-3 mb-md-0">
-                        <div class="btn-group flex-wrap gap-2">
-                            <button class="btn btn-dark btn-sm filter-btn active" data-type="All">MASTER VIEW</button>
-                            <button class="btn btn-primary btn-sm filter-btn" data-type="Ocean">OCEAN ONLY</button>
-                            <button class="btn btn-success btn-sm filter-btn" data-type="Pond Water">POND ONLY</button>
-                        </div>
-                    </div>
-                    <div class="col-md-5 text-md-end">
-                        <div class="d-flex gap-2 justify-content-md-end flex-wrap">
-                            <a href="/export/Ocean" class="btn btn-sm btn-outline-primary fw-bold">OCEAN SHEET</a>
-                            <a href="/export/Pond" class="btn btn-sm btn-outline-success fw-bold">POND SHEET</a>
-                            <a href="/export/All" class="btn btn-sm btn-success fw-bold">COMBINED ALL</a>
-                        </div>
-                    </div>
+        <div class="card p-3 shadow">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="btn-group">
+                    <button class="btn btn-outline-info btn-sm filter-btn active" data-type="All">MASTER VIEW</button>
+                    <button class="btn btn-outline-info btn-sm filter-btn" data-type="Ocean">OCEAN SYSTEM</button>
+                    <button class="btn btn-outline-info btn-sm filter-btn" data-type="Pond Water">POND SYSTEM</button>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/export/Ocean" class="btn btn-sm btn-neon"><i class="fas fa-file-excel me-1"></i> OCEAN XLSX</a>
+                    <a href="/export/Pond" class="btn btn-sm btn-neon"><i class="fas fa-file-excel me-1"></i> POND XLSX</a>
                 </div>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header bg-white py-3"><h6 class="fw-bold mb-0 text-primary">LIVE MONITORING LOGS</h6></div>
+        <div class="card shadow">
+            <div class="card-header">Telemetry Logs</div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light"><tr id="table-headers"></tr></thead>
+                    <thead class="table-dark">
+                        <tr><th>ACQUISITION TIME</th><th>CLASSIFICATION</th><th>COORDINATES</th><th>pH</th><th>TDS</th><th>TEMP</th></tr>
+                    </thead>
                     <tbody id="data-table-body"></tbody>
                 </table>
             </div>

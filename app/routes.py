@@ -31,6 +31,10 @@ def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
+            # Update visit stats on successful login
+            u.visit_count = (u.visit_count or 0) + 1
+            db.session.commit()
+            
             login_user(u)
             return redirect(url_for('main.index'))
     return render_template('login.html')
@@ -49,7 +53,7 @@ def get_data():
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
-    # Define Ocean Grouping
+    # NRSC Requirement: Group these 5 types under the "Ocean" category
     ocean_group = [
         'Open Ocean Water', 'Coastal Water', 'Estuarine Water', 
         'Deep Sea Water', 'Marine Surface Water'
@@ -64,7 +68,7 @@ def export_excel(project):
 
     wb = Workbook()
     ws = wb.active
-    ws.append(['ID', 'Timestamp', 'Latitude', 'Longitude', 'Water Type', 'pH', 'TDS', 'Temp (°C)'])
+    ws.append(['ID', 'Timestamp (IST)', 'Latitude', 'Longitude', 'Water Category', 'pH', 'TDS (mg/L)', 'Temp (°C)'])
     
     for r in readings:
         ws.append([
@@ -82,7 +86,7 @@ def export_excel(project):
     wb.save(output)
     output.seek(0)
     
-    filename = f"NRSC_AquaFlow_{project}_Report_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    filename = f"NRSC_AquaFlow_{project}_Data_{datetime.now().strftime('%d-%b-%Y')}.xlsx"
     return send_file(
         output, 
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 

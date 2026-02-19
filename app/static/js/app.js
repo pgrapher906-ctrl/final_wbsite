@@ -4,36 +4,27 @@ document.addEventListener('DOMContentLoaded', function() {
     let markersLayer = L.layerGroup().addTo(map);
     let allData = [];
 
-    function renderDashboard(data, activeFilter = 'All') {
+    function renderDashboard(data) {
         const tableBody = document.getElementById('data-table-body');
-        const isPondView = activeFilter === 'Pond Water';
         tableBody.innerHTML = '';
         markersLayer.clearLayers(); 
 
         data.forEach(row => {
-            const isOcean = row.water_type.toLowerCase().includes('ocean');
-            
-            // Draw Elegant Liquid Pins
             if (row.latitude && row.longitude) {
+                const isOcean = row.water_type.toLowerCase().includes('ocean');
                 const markerColor = isOcean ? '#457b9d' : '#2a9d8f';
                 L.circleMarker([row.latitude, row.longitude], {
-                    radius: 11,
-                    fillColor: markerColor,
-                    color: "#fff",
-                    weight: 3,
-                    fillOpacity: 0.9
+                    radius: 10, fillColor: markerColor, color: "#fff", weight: 2, fillOpacity: 0.8
                 }).bindPopup(`<b>${row.water_type}</b>`).addTo(markersLayer);
             }
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${new Date(row.timestamp).toLocaleTimeString()}</td>
-                <td><span class="badge rounded-pill ${isOcean ? 'bg-primary' : 'bg-success'}">${row.water_type}</span></td>
-                <td>${parseFloat(row.latitude).toFixed(4)}, ${parseFloat(row.longitude).toFixed(4)}</td>
-                <td>${row.ph}</td><td>${row.tds}</td>
-                ${isPondView ? `<td>${row.do || '-'}</td>` : ''}
-                <td>${row.temperature}°C</td>
-                <td>${row.has_image ? `<a href="/image/${row.id}" target="_blank" class="btn btn-sm btn-link text-primary">View</a>` : '-'}</td>
+                <td>${row.water_type}</td>
+                <td>${row.latitude}, ${row.longitude}</td>
+                <td>${row.ph}</td><td>${row.tds}</td><td>${row.temperature}°C</td>
+                <td><a href="/image/${row.id}" target="_blank">View</a></td>
             `;
             tableBody.appendChild(tr);
         });
@@ -42,11 +33,5 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/data').then(res => res.json()).then(data => {
         allData = data || [];
         renderDashboard(allData);
-    });
-
-    document.getElementById('btn-detect').addEventListener('click', function() {
-        navigator.geolocation.getCurrentPosition(pos => {
-            map.setView([pos.coords.latitude, pos.coords.longitude], 14);
-        });
     });
 });

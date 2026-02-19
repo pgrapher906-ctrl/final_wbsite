@@ -16,7 +16,7 @@ def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
-            # Update visit count for user metrics
+            # Update user session stats
             u.visit_count = (u.visit_count or 0) + 1
             db.session.commit()
             login_user(u)
@@ -60,11 +60,11 @@ def export_excel(project):
     for r in readings:
         row = [r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, float(r.ph) if r.ph else 0.0, r.temperature]
         if is_pond:
-            row.append(r.do) # Add DO for Freshwater reports
+            row.append(r.do) # Add DO for Freshwater
         row.append(r.tds)
         ws.append(row)
 
-    # AUTO-FIX: Automatically adjust column widths so no data is hidden
+    # AUTO-FIX: Automatically adjust column widths so text is never hidden
     for col in ws.columns:
         max_length = 0
         column = col[0].column_letter

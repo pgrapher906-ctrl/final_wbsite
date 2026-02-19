@@ -32,6 +32,7 @@ def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
+            # Update visit stats
             u.visit_count = (u.visit_count or 0) + 1
             db.session.commit()
             login_user(u)
@@ -92,7 +93,6 @@ def export_excel(project):
                     max_length = len(str(cell.value))
             except:
                 pass
-        # Set width to max content length + some padding
         ws.column_dimensions[column].width = max_length + 2
     # =====================================================
         

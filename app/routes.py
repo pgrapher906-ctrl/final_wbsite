@@ -30,7 +30,6 @@ def login():
     if request.method == 'POST':
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
-            # Update visit count for the navbar dashboard
             u.visit_count = (u.visit_count or 0) + 1
             db.session.commit()
             login_user(u)
@@ -64,7 +63,7 @@ def export_excel(project):
     wb = Workbook()
     ws = wb.active
     
-    # Dynamic Headers based on project requirements
+    # Header logic including DO for Pond reports
     headers = ['ID', 'Timestamp (IST)', 'Latitude', 'Longitude', 'Type', 'pH', 'Temp (°C)', 'TDS (PPM)']
     if is_pond:
         headers.insert(7, 'DO (PPM)')
@@ -74,11 +73,11 @@ def export_excel(project):
     for r in readings:
         row = [r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, float(r.ph) if r.ph else 0.0, r.temperature]
         if is_pond:
-            row.append(r.do) # Adding DO specifically for Freshwater Pond reports
+            row.append(r.do)
         row.append(r.tds)
         ws.append(row)
 
-    # AUTO-FIX: Resizes columns so text like coordinates or timestamps are never hidden
+    # AUTO-FIX: Automatically adjust column widths so text is never hidden
     for col in ws.columns:
         max_length = 0
         column = col[0].column_letter
@@ -90,15 +89,13 @@ def export_excel(project):
     output = BytesIO()
     wb.save(output)
     output.seek(0)
-    filename = f"NRSC_AquaFlow_{project}_Report_{datetime.now().strftime('%d-%b-%Y')}.xlsx"
-    return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=filename)
+    return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=f"NRSC_AquaFlow_{project}_Report.xlsx")
 
 @main_bp.route('/image/<int:record_id>')
 @login_required
 def get_image(record_id):
     r = WaterData.query.get(record_id)
     if r and r.image_path:
-        # Properly decode Base64 data strings
         img_data = r.image_path.split(",")[1] if "," in r.image_path else r.image_path
         return send_file(BytesIO(base64.b64decode(img_data)), mimetype='image/jpeg')
     return "Not found", 404

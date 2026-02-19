@@ -10,6 +10,22 @@ import os
 
 main_bp = Blueprint('main', __name__)
 
+# FIX: Added Register Route to solve BuildError
+@main_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        username = request.form.get('username')
+        if User.query.filter((User.email == email) | (User.username == username)).first():
+            return render_template('register.html', error="User already exists.")
+        
+        new_user = User(username=username, email=email)
+        new_user.set_password(request.form.get('password'))
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect(url_for('main.login'))
+    return render_template('register.html')
+
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -27,12 +43,12 @@ def login():
 @login_required
 def export_excel(project):
     ocean_group = ['Open Ocean Water', 'Coastal Water', 'Estuarine Water', 'Deep Sea Water', 'Marine Surface Water']
+    is_pond = project == "Pond"
     
-    # Selection logic for separate or combined sheets
     if project == "Ocean":
         readings = WaterData.query.filter(WaterData.water_type.in_(ocean_group)).all()
         headers = ['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'Temp', 'TDS']
-    elif project == "Pond":
+    elif is_pond:
         readings = WaterData.query.filter(WaterData.water_type == 'Pond Water').all()
         headers = ['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'Temp', 'DO (PPM)', 'TDS']
     else:
@@ -50,14 +66,9 @@ def export_excel(project):
         row.append(r.tds)
         ws.append(row)
 
-    # AUTO-FIX: Column Widths
+    # Auto-adjust column widths
     for col in ws.columns:
-        max_length = 0
-        column = col[0].column_letter
-        for cell in col:
-            if cell.value and len(str(cell.value)) > max_length:
-                max_length = len(str(cell.value))
-        ws.column_dimensions[column].width = max_length + 2
+        ws.column_dimensions[col[0].column_letter].width = 15
         
     output = BytesIO()
     wb.save(output)

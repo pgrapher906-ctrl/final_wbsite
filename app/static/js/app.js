@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const headerRow = document.getElementById('table-headers');
         const tableBody = document.getElementById('data-table-body');
         
-        // Dynamic Header Toggle: Pond View adds DO
+        // FIX: Dynamic Header Swap
         const isPondView = activeFilter === 'Pond Water';
         headerRow.innerHTML = `
             <th>TIME</th><th>TYPE</th><th>COORDINATES</th>
@@ -19,21 +19,10 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         tableBody.innerHTML = '';
-        if (!data || data.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="9" class="text-center p-4">No records found.</td></tr>`;
-            return;
-        }
-
         data.forEach(row => {
             const tr = document.createElement('tr');
             const isOcean = oceanSubtypes.includes(row.water_type.toLowerCase());
             
-            // Map Marker Color-Coding
-            const markerColor = isOcean ? '#0077be' : '#4a7c59';
-            L.circleMarker([row.latitude, row.longitude], { radius: 8, fillColor: markerColor, color: "#fff", weight: 2, fillOpacity: 0.8 })
-                .bindPopup(`<b>${row.water_type}</b><br>pH: ${row.ph}<br>Temp: ${row.temperature}°C`)
-                .addTo(markersLayer);
-
             tr.innerHTML = `
                 <td>${new Date(row.timestamp).toLocaleString()}</td>
                 <td><span class="badge ${isOcean ? 'badge-ocean' : 'badge-pond'}">${row.water_type}</span></td>
@@ -42,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ${isPondView ? `<td>${row.do || '-'}</td>` : ''}
                 <td>${row.temperature}°C</td>
                 <td class="text-center">
-                    ${row.has_image ? `<a href="/image/${row.id}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-image"></i> View</a>` : '-'}
+                    ${row.has_image ? `<a href="/image/${row.id}" target="_blank" class="btn btn-sm btn-outline-primary">View</a>` : '-'}
                 </td>
             `;
             tableBody.appendChild(tr);

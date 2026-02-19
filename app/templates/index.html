@@ -11,26 +11,29 @@
         :root { --nrsc-blue: #004080; --ocean-cyan: #0077be; --pond-olive: #4a7c59; --bg-light: #f8f9fa; }
         body { background-color: var(--bg-light); font-family: 'Segoe UI', system-ui, sans-serif; }
         .navbar { background-color: var(--nrsc-blue); border-bottom: 3px solid #ffc107; }
-        .navbar-brand { font-weight: 800; letter-spacing: 0.5px; color: white !important; }
+        .navbar-brand { font-weight: 800; color: white !important; }
         .nav-stats { color: #e9ecef; font-size: 0.85rem; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 15px; }
         .card { border: 1px solid #dee2e6; border-radius: 10px; overflow: hidden; margin-bottom: 25px; }
-        .card-header { background-color: #fff; padding: 12px 20px; border-bottom: 2px solid #f1f1f1; }
-        .step-label { color: var(--nrsc-blue); font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
         #map { height: 450px; width: 100%; z-index: 1; }
+        
+        /* FIX: Dropdown Visibility Fix */
+        .dropdown { position: relative; z-index: 1050; }
+        .dropdown-menu { z-index: 2000 !important; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
         .badge-ocean { background-color: var(--ocean-cyan); color: white; }
         .badge-pond { background-color: var(--pond-olive); color: white; }
         .coord-display { background: #fff; border-bottom: 1px solid #eee; padding: 10px 20px; }
-        .coord-input { font-family: 'Courier New', Courier, monospace; font-weight: bold; color: var(--nrsc-blue); text-align: center; }
+        .coord-input { font-family: monospace; font-weight: bold; color: var(--nrsc-blue); text-align: center; }
     </style>
 </head>
 <body>
     <nav class="navbar sticky-top mb-4">
         <div class="container">
-            <a class="navbar-brand" href="#"><i class="fas fa-globe-asia me-2"></i> NRSC AquaFlow Viewer</a>
+            <a class="navbar-brand" href="#"><i class="fas fa-globe-asia me-2"></i> NRSC AquaFlow</a>
             <div class="d-flex align-items-center text-white">
                 <div class="nav-stats d-none d-md-block text-end me-3">
-                    <div>AUTHENTICATED: <strong>{{ current_user.username }}</strong></div>
-                    <div>SESSION COUNT: <strong>{{ current_user.visit_count }}</strong></div>
+                    <div>USER: <strong>{{ current_user.username }}</strong></div>
+                    <div>SESSION: <strong>{{ current_user.visit_count }}</strong></div>
                 </div>
                 <a href="/logout" class="btn btn-sm btn-warning fw-bold">SIGN OUT</a>
             </div>
@@ -40,61 +43,48 @@
     <div class="container">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="step-label mb-0">Step 1 – Spatial Distribution</h5>
-                <button id="btn-detect" class="btn btn-sm btn-info text-white fw-bold"><i class="fas fa-crosshairs"></i> GET CURRENT GPS</button>
+                <h5 class="fw-bold mb-0">Step 1 – Spatial Distribution</h5>
+                <button id="btn-detect" class="btn btn-sm btn-info text-white fw-bold"><i class="fas fa-crosshairs"></i> GET GPS</button>
             </div>
             <div class="coord-display">
                 <div class="row g-2">
-                    <div class="col-6">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-light text-primary fw-bold">LATITUDE</span>
-                            <input type="text" id="lat-input" class="form-control coord-input" placeholder="0.0000" readonly>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-light text-primary fw-bold">LONGITUDE</span>
-                            <input type="text" id="lon-input" class="form-control coord-input" placeholder="0.0000" readonly>
-                        </div>
-                    </div>
+                    <div class="col-6"><input type="text" id="lat-input" class="form-control coord-input" placeholder="Latitude" readonly></div>
+                    <div class="col-6"><input type="text" id="lon-input" class="form-control coord-input" placeholder="Longitude" readonly></div>
                 </div>
             </div>
-            <div class="card-body p-0"><div id="map"></div></div>
+            <div id="map"></div>
         </div>
 
         <div class="card">
-            <div class="card-header"><h5 class="step-label">Step 2 – Classification & Reports</h5></div>
+            <div class="card-header fw-bold">Step 2 – Classification & Reports</div>
             <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-xl-9">
-                        <p class="text-muted small fw-bold mb-2">FILTER BY WATER BODY CLASSIFICATION:</p>
-                        <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-dark btn-sm filter-btn active" data-type="All">MASTER VIEW</button>
-                            <button class="btn btn-primary btn-sm filter-btn" data-type="Ocean">OCEAN MONITORING</button>
-                            <button class="btn btn-success btn-sm filter-btn" data-type="Pond Water">FRESHWATER POND</button>
-                        </div>
+                <div class="d-flex justify-content-between flex-wrap gap-2">
+                    <div class="btn-group flex-wrap gap-2">
+                        <button class="btn btn-dark btn-sm filter-btn active" data-type="All">MASTER VIEW</button>
+                        <button class="btn btn-primary btn-sm filter-btn" data-type="Ocean">OCEAN MONITORING</button>
+                        <button class="btn btn-success btn-sm filter-btn" data-type="Pond Water">FRESHWATER POND</button>
                     </div>
-                    <div class="col-xl-3 text-xl-end mt-3 mt-xl-0">
-                        <div class="dropdown">
-                            <button class="btn btn-success fw-bold dropdown-toggle w-100" type="button" data-bs-toggle="dropdown">EXPORT REPORT</button>
-                            <ul class="dropdown-menu shadow">
-                                <li><a class="dropdown-item fw-bold" href="/export/All">All Synchronized Data</a></li>
-                                <li><a class="dropdown-item" href="/export/Ocean">Ocean Group</a></li>
-                                <li><a class="dropdown-item" href="/export/Pond">Pond Monitoring</a></li>
-                            </ul>
-                        </div>
+                    <div class="dropdown">
+                        <button class="btn btn-success fw-bold dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-file-download me-2"></i> EXPORT REPORT
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item fw-bold" href="/export/All">All Sync Data</a></li>
+                            <li><a class="dropdown-item" href="/export/Ocean">Ocean Group</a></li>
+                            <li><a class="dropdown-item" href="/export/Pond">Pond Monitoring</a></li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-header"><h5 class="step-label">Live Monitoring Logs</h5></div>
+            <div class="card-header fw-bold">LIVE MONITORING LOGS</div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light"><tr id="table-headers"></tr></thead>
                     <tbody id="data-table-body">
-                        <tr><td colspan="9" class="text-center p-5 text-muted">Querying Neon Database...</td></tr>
+                        <tr><td colspan="9" class="text-center p-5 text-muted">Awaiting Database Feed...</td></tr>
                     </tbody>
                 </table>
             </div>

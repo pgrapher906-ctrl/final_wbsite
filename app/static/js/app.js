@@ -4,22 +4,24 @@ document.addEventListener('DOMContentLoaded', function() {
     let markersLayer = L.layerGroup().addTo(map);
     let allData = [];
 
-    const oceanTypes = ['open ocean water', 'coastal water', 'estuarine water', 'deep sea water', 'marine surface water', 'drinking water'];
+    const oceanTypes = ['open ocean water', 'coastal water', 'estuarine water', 'deep sea water', 'marine surface water'];
+    // Grouping requested types under Pond classification
+    const pondGroupTypes = ['pond water', 'drinking water', 'ground water', 'borewell water'];
 
     function renderDashboard(data) {
         const tableBody = document.getElementById('data-table-body');
         tableBody.innerHTML = '';
         markersLayer.clearLayers(); 
 
-        // Update Live Counters
+        // Live Counter Update
         const oceanCount = allData.filter(d => oceanTypes.includes(d.water_type.toLowerCase())).length;
-        const pondCount = allData.filter(d => d.water_type.toLowerCase().includes('pond')).length;
-        
+        const pondCount = allData.filter(d => pondGroupTypes.includes(d.water_type.toLowerCase())).length;
         document.getElementById('ocean-count').innerText = oceanCount;
         document.getElementById('pond-count').innerText = pondCount;
 
         data.forEach(row => {
-            const isOcean = oceanTypes.includes(row.water_type.toLowerCase());
+            const rowType = row.water_type.toLowerCase();
+            const isOcean = oceanTypes.includes(rowType);
             
             if (row.latitude && row.longitude) {
                 const markerColor = isOcean ? '#457b9d' : '#2a9d8f';
@@ -56,7 +58,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (viewType === 'Ocean') {
                 filtered = allData.filter(d => oceanTypes.includes(d.water_type.toLowerCase()));
             } else if (viewType === 'Pond') {
-                filtered = allData.filter(d => d.water_type.toLowerCase().includes('pond'));
+                // Filter logic for grouped Pond/Drinking/Ground water
+                filtered = allData.filter(d => pondGroupTypes.includes(d.water_type.toLowerCase()));
             } else {
                 filtered = allData;
             }

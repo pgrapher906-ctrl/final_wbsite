@@ -9,8 +9,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderDashboard(data, activeFilter = 'All') {
         const headerRow = document.getElementById('table-headers');
         const tableBody = document.getElementById('data-table-body');
+        const exportBtn = document.getElementById('direct-export-btn');
         
-        // Dynamic Header Logic
+        // Update direct download URL based on selected classification
+        const slug = activeFilter === 'Pond Water' ? 'Pond' : (activeFilter === 'Ocean' ? 'Ocean' : 'All');
+        exportBtn.href = `/export/${slug}`;
+
+        // Dynamic Header Toggle
         const isPondView = activeFilter === 'Pond Water';
         headerRow.innerHTML = `
             <th>TIME</th><th>CLASSIFICATION</th><th>COORDINATES</th>
@@ -19,10 +24,21 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         tableBody.innerHTML = '';
+        if (!data || data.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="9" class="text-center p-4">No database records found for ${activeFilter}</td></tr>`;
+            return;
+        }
+
         data.forEach(row => {
             const tr = document.createElement('tr');
             const isOcean = oceanSubtypes.includes(row.water_type.toLowerCase());
             
+            // Marker Visual Logic
+            const markerColor = isOcean ? '#0077be' : '#4a7c59';
+            L.circleMarker([row.latitude, row.longitude], { radius: 8, fillColor: markerColor, color: "#fff", weight: 2, fillOpacity: 0.8 })
+                .bindPopup(`<b>${row.water_type}</b><br>pH: ${row.ph}<br>Temp: ${row.temperature}°C`)
+                .addTo(markersLayer);
+
             tr.innerHTML = `
                 <td>${new Date(row.timestamp).toLocaleString()}</td>
                 <td><span class="badge ${isOcean ? 'badge-ocean' : 'badge-pond'}">${row.water_type}</span></td>
@@ -38,14 +54,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    fetch('/api/data').then(res => res.json()).then(data => {
-        allData = data || [];
-        renderDashboard(allData);
-    });
-
+    // Filter Logic
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
             const type = this.getAttribute('data-type');
+            
             let filtered = (type === 'All') ? allData : allData.filter(d => 
                 (type === 'Ocean') ? oceanSubtypes.includes(d.water_type.toLowerCase()) : d.water_type === type
             );
@@ -53,11 +68,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // GPS & Input Display Logic
     document.getElementById('btn-detect').addEventListener('click', function() {
         navigator.geolocation.getCurrentPosition(pos => {
             document.getElementById('lat-input').value = pos.coords.latitude.toFixed(6);
             document.getElementById('lon-input').value = pos.coords.longitude.toFixed(6);
             map.setView([pos.coords.latitude, pos.coords.longitude], 12);
         });
+    });
+
+    fetch('/api/data').then(res => res.json()).then(data => {
+        allData = data || [];
+        renderDashboard(allData);
     });
 });

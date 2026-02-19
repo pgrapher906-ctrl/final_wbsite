@@ -4,31 +4,25 @@ document.addEventListener('DOMContentLoaded', function() {
     let markersLayer = L.layerGroup().addTo(map);
     let allData = [];
 
-    const oceanSubtypes = ['open ocean water', 'coastal water', 'estuarine water', 'deep sea water', 'marine surface water'];
-
     function renderDashboard(data, activeFilter = 'All') {
-        const headerRow = document.querySelector('thead tr');
         const tableBody = document.getElementById('data-table-body');
-        
         const isPondView = activeFilter === 'Pond Water';
-        headerRow.innerHTML = `
-            <th>TIME</th><th>CLASSIFICATION</th><th>COORDINATES</th>
-            <th>PH</th><th>TDS</th>${isPondView ? '<th>DO</th>' : ''}
-            <th>TEMP</th><th>EVIDENCE</th>
-        `;
-
         tableBody.innerHTML = '';
         markersLayer.clearLayers(); 
 
         data.forEach(row => {
-            const isOcean = oceanSubtypes.includes(row.water_type.toLowerCase()) || row.water_type.toLowerCase().includes('ocean');
+            const isOcean = row.water_type.toLowerCase().includes('ocean');
             
-            // --- POINT VIEW ON MAP ---
+            // Draw Elegant Liquid Pins
             if (row.latitude && row.longitude) {
                 const markerColor = isOcean ? '#457b9d' : '#2a9d8f';
                 L.circleMarker([row.latitude, row.longitude], {
-                    radius: 10, fillColor: markerColor, color: "#fff", weight: 2, fillOpacity: 0.8
-                }).bindPopup(`<b>${row.water_type}</b><br>pH: ${row.ph}`).addTo(markersLayer);
+                    radius: 11,
+                    fillColor: markerColor,
+                    color: "#fff",
+                    weight: 3,
+                    fillOpacity: 0.9
+                }).bindPopup(`<b>${row.water_type}</b>`).addTo(markersLayer);
             }
 
             const tr = document.createElement('tr');
@@ -45,28 +39,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    document.getElementById('btn-detect').addEventListener('click', function() {
-        navigator.geolocation.getCurrentPosition(pos => {
-            document.getElementById('lat-input').value = pos.coords.latitude.toFixed(6);
-            document.getElementById('lon-input').value = pos.coords.longitude.toFixed(6);
-            map.setView([pos.coords.latitude, pos.coords.longitude], 14);
-        });
-    });
-
     fetch('/api/data').then(res => res.json()).then(data => {
         allData = data || [];
         renderDashboard(allData);
     });
 
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            const type = this.getAttribute('data-type');
-            let filtered = (type === 'All') ? allData : allData.filter(d => 
-                (type === 'Ocean') ? (oceanSubtypes.includes(d.water_type.toLowerCase())) : d.water_type === type
-            );
-            renderDashboard(filtered, type);
+    // Handle Map Navigation
+    document.getElementById('btn-detect').addEventListener('click', function() {
+        navigator.geolocation.getCurrentPosition(pos => {
+            map.setView([pos.coords.latitude, pos.coords.longitude], 14);
         });
     });
 });

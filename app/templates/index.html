@@ -21,7 +21,7 @@
         .box-icon { position: absolute; font-size: 1rem; color: rgba(255,255,255,0.5); animation: swim-in-box 1.2s linear forwards; pointer-events: none; }
         @keyframes swim-in-box { from { left: -30px; } to { left: 110%; } }
 
-        /* Exact Layout: Stats (Left), Downloads (Right-Down) */
+        /* Placement: Stats (Left), Downloads (Right-Down) */
         .stats-left { display: flex; gap: 10px; align-items: center; }
         .dl-bottom-right { position: absolute; bottom: 20px; right: 30px; display: flex; gap: 12px; align-items: center; border-left: 1px solid #ddd; padding-left: 15px; }
         .dl-btn { font-size: 1.3rem; transition: 0.3s; color: #457b9d; text-decoration: none; }
@@ -48,6 +48,18 @@
     </nav>
 
     <div class="container mt-5">
+        <div class="liquid-card shadow-lg">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-primary">STEP 1 – SPATIAL DISTRIBUTION</h5>
+                <button id="btn-detect" class="btn btn-filter">GET GPS</button>
+            </div>
+            <div class="row g-3 mt-2">
+                <div class="col-6"><input type="text" id="lat-input" class="form-control rounded-pill text-center shadow-sm p-3 border-0" placeholder="Latitude" readonly></div>
+                <div class="col-6"><input type="text" id="lon-input" class="form-control rounded-pill text-center shadow-sm p-3 border-0" placeholder="Longitude" readonly></div>
+            </div>
+            <div id="map"></div>
+        </div>
+
         <div class="liquid-card shadow-lg">
             <h5 class="fw-bold mb-4 text-primary">STEP 2 – CLASSIFICATION & DATA MANAGEMENT</h5>
             <div class="d-flex align-items-center justify-content-between">
@@ -76,7 +88,7 @@
         <div class="liquid-card shadow-lg">
             <h5 class="fw-bold mb-4 text-primary">LIVE TELEMETRY STREAM</h5>
             <div class="table-responsive">
-                <table class="table align-middle">
+                <table class="table align-middle" id="telemetry-table">
                     <thead class="text-muted">
                         <tr id="table-header-row">
                             </tr>

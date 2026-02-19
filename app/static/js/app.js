@@ -10,10 +10,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const headerRow = document.getElementById('table-headers');
         const tableBody = document.getElementById('data-table-body');
         
-        // FIX: Dynamic Header Swap
+        // Dynamic Header Toggle
         const isPondView = activeFilter === 'Pond Water';
         headerRow.innerHTML = `
-            <th>TIME</th><th>TYPE</th><th>COORDINATES</th>
+            <th>TIME</th><th>CLASSIFICATION</th><th>COORDINATES</th>
             <th>PH</th><th>TDS (PPM)</th>${isPondView ? '<th>DO (PPM)</th>' : ''}
             <th>TEMP</th><th class="text-center">EVIDENCE</th>
         `;
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 ${isPondView ? `<td>${row.do || '-'}</td>` : ''}
                 <td>${row.temperature}°C</td>
                 <td class="text-center">
-                    ${row.has_image ? `<a href="/image/${row.id}" target="_blank" class="btn btn-sm btn-outline-primary">View</a>` : '-'}
+                    ${row.has_image ? `<a href="/image/${row.id}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-image"></i> View</a>` : '-'}
                 </td>
             `;
             tableBody.appendChild(tr);

@@ -1,14 +1,22 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("AquaFlow Dashboard JS Initialized");
+    console.log("NRSC AquaFlow Dashboard JS Initialized");
 
     let map = null;
     let markersLayer = null;
     let userMarker = null;
     let allData = [];
 
-    // --- 1. Initialize Map (Crash-Proof) ---
+    // Define the list of subtypes that belong to the "Ocean" group
+    const oceanSubtypes = [
+        'open ocean water', 
+        'coastal water', 
+        'estuarine water', 
+        'deep sea water', 
+        'marine surface water'
+    ];
+
+    // --- 1. Initialize Map ---
     try {
-        // Center on India by default
         map = L.map('map').setView([20.5937, 78.9629], 5);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
@@ -19,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Map initialization failed:", e);
     }
 
-    // --- 2. Fetch Data from API ---
+    // --- 2. Fetch Data ---
     const tableBody = document.getElementById('data-table-body');
     
     fetch('/api/data')
@@ -28,7 +36,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            console.log(`Loaded ${data.length} records from database.`);
             allData = data || [];
             renderDashboard(allData);
         })
@@ -37,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
             tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">Error: Could not load data from server.</td></tr>`;
         });
 
-    // --- 3. Render Dashboard (Table & Map) ---
+    // --- 3. Render Dashboard ---
     function renderDashboard(data) {
         tableBody.innerHTML = ''; 
         if (markersLayer) markersLayer.clearLayers(); 
@@ -48,23 +55,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         data.forEach(row => {
-            // Safe Data Parsing (prevents blank screens if a row is empty)
             const wType = row.water_type ? String(row.water_type) : 'Unknown';
             const lat = parseFloat(row.latitude) || 0;
             const lon = parseFloat(row.longitude) || 0;
-            const isOcean = wType.toLowerCase().includes('ocean');
+            
+            // Check if this type belongs to the Ocean group
+            const isOcean = oceanSubtypes.includes(wType.toLowerCase()) || wType.toLowerCase().includes('ocean');
 
-            // Draw Map Pin
+            // Draw Map Circle Markers (Color-Coded)
             if (lat !== 0 && lon !== 0 && markersLayer) {
-                const marker = L.marker([lat, lon]).bindPopup(`<b>${wType}</b><br>pH: ${row.ph || 'N/A'}<br>Temp: ${row.temperature || 'N/A'}°C`);
+                const markerColor = isOcean ? '#0077be' : '#4a7c59'; // Blue for Ocean, Green for Pond
+                
+                const marker = L.circleMarker([lat, lon], {
+                    radius: 8,
+                    fillColor: markerColor,
+                    color: "#fff",
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).bindPopup(`<b>${wType}</b><br>pH: ${row.ph || 'N/A'}<br>Temp: ${row.temperature || 'N/A'}°C`);
+                
                 markersLayer.addLayer(marker);
             }
 
             // Draw Table Row
             const tr = document.createElement('tr');
-            const badgeClass = isOcean ? 'bg-primary' : 'bg-secondary';
+            const badgeClass = isOcean ? 'badge-ocean' : 'badge-pond';
             
-            // Image Button
             const imageBtn = row.has_image 
                 ? `<a href="/image/${row.id}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-image"></i> View</a>` 
                 : '<span class="text-muted">-</span>';
@@ -92,7 +109,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            const originalText = btnDetect.innerHTML;
             btnDetect.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Locating...';
             btnDetect.disabled = true;
 
@@ -100,31 +116,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 (pos) => {
                     const lat = pos.coords.latitude;
                     const lon = pos.coords.longitude;
-                    
                     document.getElementById('lat-input').value = lat.toFixed(6);
                     document.getElementById('lon-input').value = lon.toFixed(6);
                     
                     if (map) {
                         map.setView([lat, lon], 12);
                         if (userMarker) map.removeLayer(userMarker);
-                        
-                        // Add a distinct red marker for the user
-                        userMarker = L.marker([lat, lon], {
-                            icon: L.divIcon({
-                                className: 'custom-user-marker',
-                                html: '<div style="background:red;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 4px rgba(0,0,0,0.5);"></div>'
-                            })
-                        }).addTo(map).bindPopup("<b>You are here</b>").openPopup();
+                        userMarker = L.marker([lat, lon]).addTo(map).bindPopup("<b>Your Current Position</b>").openPopup();
                     }
                     
                     btnDetect.innerHTML = '<i class="fas fa-check"></i> Location Found';
-                    btnDetect.className = 'btn btn-success mb-3';
+                    btnDetect.className = 'btn btn-success btn-sm fw-bold';
                     btnDetect.disabled = false;
                 },
                 (err) => {
-                    console.error("GPS Error:", err);
-                    alert("GPS Error. Please ensure location access is allowed in your browser.");
-                    btnDetect.innerHTML = originalText;
+                    alert("GPS Error. Please ensure location access is allowed.");
+                    btnDetect.innerHTML = '<i class="fas fa-crosshairs"></i> GET CURRENT GPS';
                     btnDetect.disabled = false;
                 },
                 { enableHighAccuracy: true, timeout: 10000 }
@@ -132,30 +139,35 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- 5. Project Filtering Logic ---
+    // --- 5. Professional Group Filtering ---
     const filterBtns = document.querySelectorAll('.filter-btn');
     const exportBtn = document.getElementById('btn-export');
 
     filterBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            // Visual Toggle
-            filterBtns.forEach(b => b.style.opacity = '0.6');
-            this.style.opacity = '1';
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
 
-            const type = this.getAttribute('data-type'); // Ocean, Pond, or All
+            const filterType = this.getAttribute('data-type'); 
             
-            // Filter Data
-            if (type === 'All') {
-                renderDashboard(allData);
-            } else {
-                const filtered = allData.filter(item => 
-                    (item.water_type || '').toLowerCase().includes(type.toLowerCase())
+            let filtered = allData;
+
+            if (filterType === 'Ocean') {
+                // Filter for ALL ocean subtypes
+                filtered = allData.filter(item => 
+                    oceanSubtypes.includes((item.water_type || '').toLowerCase()) || 
+                    (item.water_type || '').toLowerCase().includes('ocean')
                 );
-                renderDashboard(filtered);
+            } else if (filterType === 'Pond') {
+                filtered = allData.filter(item => 
+                    (item.water_type || '').toLowerCase().includes('pond')
+                );
+            } else if (filterType !== 'All') {
+                // Filter for a specific subtype (e.g., "Coastal Water")
+                filtered = allData.filter(item => item.water_type === filterType);
             }
-            
-            // Update the Export URL
-            exportBtn.href = `/export/${type}`;
+
+            renderDashboard(filtered);
         });
     });
 });

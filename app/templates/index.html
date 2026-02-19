@@ -9,16 +9,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --nrsc-blue: #004080; --ocean-cyan: #0077be; --pond-olive: #4a7c59; --bg-light: #f8f9fa; }
-        body { background-color: var(--bg-light); font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--bg-light); font-family: 'Segoe UI', sans-serif; }
         .navbar { background-color: var(--nrsc-blue); border-bottom: 3px solid #ffc107; padding: 10px 0; }
         .navbar-brand { font-weight: 800; color: white !important; }
-        
-        /* Profile Dropdown */
         .profile-info { color: #004080; font-size: 0.9rem; min-width: 240px; padding: 15px; }
-        .profile-info hr { margin: 10px 0; }
-
         .card { border: 1px solid #dee2e6; border-radius: 10px; overflow: hidden; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        #map { height: 450px; width: 100%; z-index: 1; border-bottom: 1px solid #ddd; }
+        #map { height: 450px; width: 100%; z-index: 1; }
         .badge-ocean { background-color: var(--ocean-cyan); color: white; }
         .badge-pond { background-color: var(--pond-olive); color: white; }
         .coord-display { background: #fff; border-bottom: 1px solid #eee; padding: 10px 20px; }
@@ -29,7 +25,6 @@
     <nav class="navbar sticky-top mb-4">
         <div class="container">
             <a class="navbar-brand" href="#"><i class="fas fa-satellite-dish me-2"></i> NRSC AquaFlow</a>
-            
             <div class="dropdown">
                 <button class="btn btn-outline-light dropdown-toggle fw-bold" type="button" data-bs-toggle="dropdown">
                     <i class="fas fa-user-circle me-1"></i> {{ current_user.username }}
@@ -67,15 +62,13 @@
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-md-7 mb-3 mb-md-0">
-                        <label class="small fw-bold text-muted d-block mb-2">FILTER MAP & TABLE:</label>
                         <div class="btn-group flex-wrap gap-2">
                             <button class="btn btn-dark btn-sm filter-btn active" data-type="All">MASTER VIEW</button>
                             <button class="btn btn-primary btn-sm filter-btn" data-type="Ocean">OCEAN ONLY</button>
                             <button class="btn btn-success btn-sm filter-btn" data-type="Pond Water">POND ONLY</button>
                         </div>
                     </div>
-                    <div class="col-md-5 text-md-end border-start">
-                        <label class="small fw-bold text-muted d-block mb-2">DOWNLOAD EXCEL REPORT:</label>
+                    <div class="col-md-5 text-md-end">
                         <div class="d-flex gap-2 justify-content-md-end flex-wrap">
                             <a href="/export/Ocean" class="btn btn-sm btn-outline-primary fw-bold">OCEAN SHEET</a>
                             <a href="/export/Pond" class="btn btn-sm btn-outline-success fw-bold">POND SHEET</a>
@@ -91,9 +84,7 @@
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light"><tr id="table-headers"></tr></thead>
-                    <tbody id="data-table-body">
-                        <tr><td colspan="9" class="text-center p-5 text-muted">Awaiting Data Sync...</td></tr>
-                    </tbody>
+                    <tbody id="data-table-body"></tbody>
                 </table>
             </div>
         </div>

@@ -44,20 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('pond-count').innerText = allData.filter(d => pondGroupTypes.includes(d.water_type.toLowerCase())).length;
     }
 
-    // In-box animation logic
-    function triggerBoxAnimation(btn, view) {
-        const splash = document.createElement('span');
-        splash.className = 'click-splash';
-        btn.appendChild(splash);
-        setTimeout(() => splash.remove(), 600);
-        if (view !== 'All') {
-            const icon = document.createElement('i');
-            icon.className = `fas ${view === 'Ocean' ? 'fa-fish' : 'fa-droplet'} box-icon`;
-            btn.appendChild(icon);
-            setTimeout(() => icon.remove(), 1200);
-        }
-    }
-
     fetch('/api/data').then(res => res.json()).then(data => {
         allData = data || [];
         renderDashboard(allData, 'All');
@@ -66,7 +52,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const view = this.getAttribute('data-view');
-            triggerBoxAnimation(this, view);
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             const filtered = (view === 'All') ? allData : allData.filter(d => 

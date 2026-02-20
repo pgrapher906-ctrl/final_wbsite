@@ -9,7 +9,7 @@ from io import BytesIO
 
 main_bp = Blueprint('main', __name__)
 
-# Serves sensor images - fixes the "Not Found" error
+# FIX: Serving images from database to prevent 404/500 errors
 @main_bp.route('/image/<int:id>')
 @login_required
 def get_image(id):
@@ -18,7 +18,7 @@ def get_image(id):
         abort(404)
     return send_file(BytesIO(reading.image_data), mimetype='image/jpeg')
 
-# Handles Excel downloads
+# FIX: Excel downloads for specific water categories
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
@@ -34,7 +34,7 @@ def export_excel(project):
 
     wb = Workbook()
     ws = wb.active
-    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'PH', 'DO', 'TDS', 'TEMP'])
+    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'PH', 'DO (PPM)', 'TDS', 'TEMP'])
     for r in readings:
         ws.append([r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, r.ph, r.do, r.tds, r.temperature])
     
@@ -43,7 +43,6 @@ def export_excel(project):
     output.seek(0)
     return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=f"NRSC_{project}_Report.xlsx")
 
-# Fixes BuildError: Could not build url for endpoint 'main.register'
 @main_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -76,3 +75,9 @@ def get_data():
 @login_required
 def index():
     return render_template('index.html')
+
+@main_bp.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('main.login'))

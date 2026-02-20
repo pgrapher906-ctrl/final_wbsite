@@ -54,7 +54,15 @@ def export_excel(project):
 @main_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        new_user = User(username=request.form.get('username'), email=request.form.get('email'))
+        username = request.form.get('username')
+        email = request.form.get('email')
+        
+        # FIXED: Check if the username is already taken to prevent the 500 crash
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            return "This username is already taken! Please go back and choose another one, or log in.", 400
+
+        new_user = User(username=username, email=email)
         new_user.set_password(request.form.get('password'))
         db.session.add(new_user)
         db.session.commit()

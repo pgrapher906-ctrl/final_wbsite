@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     let markersLayer = L.layerGroup().addTo(map);
     let allData = [];
+    let gpsMarker = null; // GUARANTEES the map pin works
 
     const oceanTypes = ['open ocean water', 'coastal water', 'estuarine water', 'deep sea water', 'marine surface water'];
     const pondGroupTypes = ['pond water', 'drinking water', 'ground water', 'borewell water'];
@@ -72,11 +73,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // FIXED: Drops a map pin onto your exact location
     document.getElementById('btn-detect').addEventListener('click', function() {
         navigator.geolocation.getCurrentPosition(pos => {
-            document.getElementById('lat-input').value = pos.coords.latitude.toFixed(6);
-            document.getElementById('lon-input').value = pos.coords.longitude.toFixed(6);
-            map.setView([pos.coords.latitude, pos.coords.longitude], 14);
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            
+            document.getElementById('lat-input').value = lat.toFixed(6);
+            document.getElementById('lon-input').value = lon.toFixed(6);
+            map.setView([lat, lon], 14);
+            
+            // Explicitly drop the map pin
+            if (gpsMarker) { map.removeLayer(gpsMarker); }
+            gpsMarker = L.marker([lat, lon]).addTo(map).bindPopup("<b>Your Location</b>").openPopup();
+        }, (err) => {
+            alert("Location access denied or unavailable. Please enable GPS in your browser.");
         });
     });
 });

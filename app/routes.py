@@ -9,16 +9,19 @@ from io import BytesIO
 
 main_bp = Blueprint('main', __name__)
 
-# FIX: Serving images from database to prevent 404/500 errors
+# FIX: Robust Image Handling to prevent 500 Server Errors
 @main_bp.route('/image/<int:id>')
 @login_required
 def get_image(id):
-    reading = WaterData.query.get_or_404(id)
-    if not reading.image_data:
-        abort(404)
-    return send_file(BytesIO(reading.image_data), mimetype='image/jpeg')
+    try:
+        reading = WaterData.query.get_or_404(id)
+        if not reading.image_data:
+            return "No image data available for this specific sensor reading.", 404
+        return send_file(BytesIO(reading.image_data), mimetype='image/jpeg')
+    except Exception as e:
+        return f"Server Error reading image: {str(e)}", 500
 
-# FIX: Excel downloads for specific water categories
+# FIX: Excel downloads
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
@@ -34,7 +37,7 @@ def export_excel(project):
 
     wb = Workbook()
     ws = wb.active
-    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'PH', 'DO (PPM)', 'TDS', 'TEMP'])
+    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'PH', 'DO', 'TDS', 'TEMP'])
     for r in readings:
         ws.append([r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, r.ph, r.do, r.tds, r.temperature])
     
@@ -43,6 +46,7 @@ def export_excel(project):
     output.seek(0)
     return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=f"NRSC_{project}_Report.xlsx")
 
+# FIX: Restored to resolve Render BuildError
 @main_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':

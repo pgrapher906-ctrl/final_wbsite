@@ -31,7 +31,6 @@
         .scroll-container::-webkit-scrollbar { height: 5px; }
         .scroll-container::-webkit-scrollbar-thumb { background-color: rgba(69, 123, 157, 0.4); border-radius: 10px; }
         @media (max-width: 768px) { #map { height: 300px; } }
-        /* Ensure vertical rule is visible on desktop */
         @media (min-width: 768px) { .vr { opacity: 1; } }
     </style>
 </head>
@@ -68,28 +67,26 @@
         <div class="liquid-card shadow-lg">
             <h5 class="fw-bold mb-4 text-primary text-center text-md-start">STEP 2 – CLASSIFICATION & DATA MANAGEMENT</h5>
             
-            <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+            <div class="d-flex flex-column flex-md-row align-items-center w-100 gap-3">
                 
                 <div class="d-flex gap-2 flex-shrink-0">
                     <div class="badge bg-white text-primary border shadow-sm p-2 px-3 rounded-pill"><i class="fas fa-fish me-2"></i>Ocean: <span id="ocean-count">0</span></div>
                     <div class="badge bg-white text-success border shadow-sm p-2 px-3 rounded-pill"><i class="fas fa-faucet-drip me-2"></i>Pond: <span id="pond-count">0</span></div>
                 </div>
 
-                <div class="d-flex align-items-center gap-3 overflow-x-auto w-100 justify-content-md-end pb-2 pb-md-0 scroll-container text-nowrap">
-                     <div class="d-flex gap-2">
-                        <button class="btn-filter filter-btn active text-nowrap" data-view="All">MASTER VIEW</button>
-                        <button class="btn-filter filter-btn text-nowrap" data-view="Ocean">OCEAN WATER</button>
-                        <button class="btn-filter filter-btn text-nowrap" data-view="Pond">POND WATER</button>
-                     </div>
-                     
-                     <div class="vr d-none d-md-block mx-2" style="height: 30px; opacity: 0.3;"></div>
-                     
-                     <div class="d-flex gap-3 align-items-center">
-                        <a href="/export/Ocean" class="dl-btn text-primary" title="Download Ocean"><i class="fas fa-fish"></i></a>
-                        <a href="/export/Pond" class="dl-btn text-success" title="Download Pond"><i class="fas fa-faucet"></i></a>
-                        <a href="/export/All" class="dl-btn text-danger" title="Download All"><i class="fas fa-file-zipper"></i></a>
-                     </div>
+                <div class="d-flex gap-2 flex-grow-1 justify-content-center scroll-container overflow-x-auto text-nowrap pb-2 pb-md-0">
+                    <button class="btn-filter filter-btn active text-nowrap" data-view="All">MASTER VIEW</button>
+                    <button class="btn-filter filter-btn text-nowrap" data-view="Ocean">OCEAN WATER</button>
+                    <button class="btn-filter filter-btn text-nowrap" data-view="Pond">POND WATER</button>
                 </div>
+                
+                <div class="d-flex gap-3 align-items-center flex-shrink-0 mt-2 mt-md-0">
+                    <div class="vr d-none d-md-block mx-2" style="height: 30px; opacity: 0.3;"></div>
+                    <a href="/export/Ocean" class="dl-btn text-primary" title="Download Ocean"><i class="fas fa-fish"></i></a>
+                    <a href="/export/Pond" class="dl-btn text-success" title="Download Pond"><i class="fas fa-faucet"></i></a>
+                    <a href="/export/All" class="dl-btn text-danger" title="Download All"><i class="fas fa-file-zipper"></i></a>
+                </div>
+                
             </div>
         </div>
 

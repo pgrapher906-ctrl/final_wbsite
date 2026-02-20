@@ -9,7 +9,7 @@ from io import BytesIO
 
 main_bp = Blueprint('main', __name__)
 
-# FIX: Images not opening - added secure image serving route
+# RESTORED: Route to open images based on reading ID
 @main_bp.route('/image/<int:id>')
 @login_required
 def get_image(id):
@@ -18,6 +18,7 @@ def get_image(id):
         abort(404)
     return send_file(BytesIO(reading.image_data), mimetype='image/jpeg')
 
+# RESTORED: Excel Export with DO (PPM)
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
@@ -33,7 +34,7 @@ def export_excel(project):
 
     wb = Workbook()
     ws = wb.active
-    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'PH', 'DO', 'TDS', 'TEMP'])
+    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'PH', 'DO (PPM)', 'TDS', 'TEMP'])
     for r in readings:
         ws.append([r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, r.ph, r.do, r.tds, r.temperature])
     

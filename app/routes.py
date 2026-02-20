@@ -1,3 +1,4 @@
+import base64
 from flask import Blueprint, render_template, request, redirect, url_for, send_file, jsonify, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime
@@ -9,19 +10,27 @@ from io import BytesIO
 
 main_bp = Blueprint('main', __name__)
 
-# FIX: Robust Image Handling to prevent 500 Server Errors
+# FIX: Base64 Decoding for image_path text
 @main_bp.route('/image/<int:id>')
 @login_required
 def get_image(id):
     try:
         reading = WaterData.query.get_or_404(id)
-        if not reading.image_data:
-            return "No image data available for this specific sensor reading.", 404
-        return send_file(BytesIO(reading.image_data), mimetype='image/jpeg')
+        # Using image_path as seen in your Neon database
+        if not reading.image_path:
+            return "No image data available for this reading.", 404
+            
+        img_text = reading.image_path
+        # Clean the string just in case it contains a data URI header
+        if "base64," in img_text:
+            img_text = img_text.split("base64,")[1]
+            
+        # Decode the text back into binary image data
+        decoded_image = base64.b64decode(img_text)
+        return send_file(BytesIO(decoded_image), mimetype='image/jpeg')
     except Exception as e:
-        return f"Server Error reading image: {str(e)}", 500
+        return f"Server Error decoding image: {str(e)}", 500
 
-# FIX: Excel downloads
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
@@ -37,7 +46,7 @@ def export_excel(project):
 
     wb = Workbook()
     ws = wb.active
-    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'PH', 'DO', 'TDS', 'TEMP'])
+    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'PH', 'DO (PPM)', 'TDS', 'TEMP'])
     for r in readings:
         ws.append([r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, r.ph, r.do, r.tds, r.temperature])
     
@@ -46,7 +55,6 @@ def export_excel(project):
     output.seek(0)
     return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=f"NRSC_{project}_Report.xlsx")
 
-# FIX: Restored to resolve Render BuildError
 @main_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':

@@ -69,18 +69,18 @@
             
             <div class="d-flex flex-column flex-md-row align-items-center w-100 gap-3">
                 
-                <div class="d-flex gap-2 flex-shrink-0">
+                <div class="d-flex gap-2 justify-content-center justify-content-md-start" style="flex: 1;">
                     <div class="badge bg-white text-primary border shadow-sm p-2 px-3 rounded-pill"><i class="fas fa-fish me-2"></i>Ocean: <span id="ocean-count">0</span></div>
                     <div class="badge bg-white text-success border shadow-sm p-2 px-3 rounded-pill"><i class="fas fa-faucet-drip me-2"></i>Pond: <span id="pond-count">0</span></div>
                 </div>
 
-                <div class="d-flex gap-2 flex-grow-1 justify-content-center scroll-container overflow-x-auto text-nowrap pb-2 pb-md-0">
-                    <button class="btn-filter filter-btn active text-nowrap" data-view="All">MASTER VIEW</button>
-                    <button class="btn-filter filter-btn text-nowrap" data-view="Ocean">OCEAN WATER</button>
-                    <button class="btn-filter filter-btn text-nowrap" data-view="Pond">POND WATER</button>
+                <div class="d-flex gap-2 flex-grow-1 justify-content-center flex-wrap pb-2 pb-md-0">
+                    <button class="btn-filter filter-btn active" data-view="All">MASTER VIEW</button>
+                    <button class="btn-filter filter-btn" data-view="Ocean">OCEAN WATER</button>
+                    <button class="btn-filter filter-btn" data-view="Pond">POND WATER</button>
                 </div>
                 
-                <div class="d-flex gap-3 align-items-center flex-shrink-0 mt-2 mt-md-0">
+                <div class="d-flex gap-3 align-items-center justify-content-center justify-content-md-end" style="flex: 1;">
                     <div class="vr d-none d-md-block mx-2" style="height: 30px; opacity: 0.3;"></div>
                     <a href="/export/Ocean" class="dl-btn text-primary" title="Download Ocean"><i class="fas fa-fish"></i></a>
                     <a href="/export/Pond" class="dl-btn text-success" title="Download Pond"><i class="fas fa-faucet"></i></a>

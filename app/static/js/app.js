@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderDashboard(data, view) {
         const headerRow = document.getElementById('table-header-row');
-        let headers = ['TIME', 'TYPE', 'COORDINATES', 'PH', 'DO', 'TDS', 'TEMP', 'EVIDENCE'];
+        let headers = ['TIME', 'TYPE', 'COORDINATES', 'PH', 'DO (PPM)', 'TDS', 'TEMP', 'EVIDENCE'];
         if (view === 'Ocean') { headers = ['TIME', 'TYPE', 'COORDINATES', 'PH', 'TDS', 'TEMP', 'EVIDENCE']; }
         headerRow.innerHTML = headers.map(h => `<th>${h}</th>`).join('');
 
@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const tr = document.createElement('tr');
+            // FIX: Image viewer link to prevent 404
             let cells = `<td>${new Date(row.timestamp).toLocaleTimeString()}</td>
                 <td><span class="badge rounded-pill ${isOcean ? 'bg-primary' : 'bg-success'}">${row.water_type}</span></td>
                 <td>${parseFloat(row.latitude).toFixed(4)}, ${parseFloat(row.longitude).toFixed(4)}</td>
@@ -63,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const view = this.getAttribute('data-view');
-            triggerBoxAnimation(this, view); // RESTORED
+            triggerBoxAnimation(this, view);
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             const filtered = (view === 'All') ? allData : allData.filter(d => 

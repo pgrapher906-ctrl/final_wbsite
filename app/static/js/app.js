@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const oceanTypes = ['open ocean water', 'coastal water', 'estuarine water', 'deep sea water', 'marine surface water'];
     const pondGroupTypes = ['pond water', 'drinking water', 'ground water', 'borewell water'];
 
-    // RESTORED: Box animations
     function triggerBoxAnimation(btn, view) {
         const splash = document.createElement('span');
         splash.className = 'click-splash';

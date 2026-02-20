@@ -25,6 +25,7 @@ def login():
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
             u.visit_count = (u.visit_count or 0) + 1
+            # Track precise date and time for the profile dropdown
             u.last_login = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             db.session.commit()
             login_user(u)

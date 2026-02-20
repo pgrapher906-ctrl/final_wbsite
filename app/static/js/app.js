@@ -7,6 +7,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const oceanTypes = ['open ocean water', 'coastal water', 'estuarine water', 'deep sea water', 'marine surface water'];
     const pondGroupTypes = ['pond water', 'drinking water', 'ground water', 'borewell water'];
 
+    // RESTORED: In-box animations
+    function triggerBoxAnimation(btn, view) {
+        const splash = document.createElement('span');
+        splash.className = 'click-splash';
+        btn.appendChild(splash);
+        setTimeout(() => splash.remove(), 600);
+
+        if (view !== 'All') {
+            const icon = document.createElement('i');
+            icon.className = `fas ${view === 'Ocean' ? 'fa-fish' : 'fa-droplet'} box-icon`;
+            btn.appendChild(icon);
+            setTimeout(() => icon.remove(), 1200);
+        }
+    }
+
     function updateTableHeaders(view) {
         const headerRow = document.getElementById('table-header-row');
         let headers = ['TIME', 'TYPE', 'COORDINATES', 'PH', 'DO', 'TDS', 'TEMP', 'EVIDENCE'];
@@ -52,6 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const view = this.getAttribute('data-view');
+            triggerBoxAnimation(this, view); // RESTORED ANIMATION
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             const filtered = (view === 'All') ? allData : allData.filter(d => 

@@ -12,3 +12,9 @@ class Config:
     SQLALCHEMY_DATABASE_URI = uri
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = "smart_water_2026_secure_key"
+
+    # FIX: Prevents Vercel 500 errors by pinging the database to keep the connection alive
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+    }

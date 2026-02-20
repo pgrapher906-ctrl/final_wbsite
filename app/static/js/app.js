@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const oceanTypes = ['open ocean water', 'coastal water', 'estuarine water', 'deep sea water', 'marine surface water'];
     const pondGroupTypes = ['pond water', 'drinking water', 'ground water', 'borewell water'];
 
-    // RESTORED: Click animations
+    // RESTORED: Box animations
     function triggerBoxAnimation(btn, view) {
         const splash = document.createElement('span');
         splash.className = 'click-splash';
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const view = this.getAttribute('data-view');
-            triggerBoxAnimation(this, view);
+            triggerBoxAnimation(this, view); // RESTORED
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             const filtered = (view === 'All') ? allData : allData.filter(d => 
@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // RESTORED: GPS logic
     document.getElementById('btn-detect').addEventListener('click', function() {
         navigator.geolocation.getCurrentPosition(pos => {
             document.getElementById('lat-input').value = pos.coords.latitude.toFixed(6);

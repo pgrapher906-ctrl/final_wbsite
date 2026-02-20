@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderDashboard(data, view) {
         const headerRow = document.getElementById('table-header-row');
-        let headers = ['TIME', 'TYPE', 'COORDINATES', 'PH', 'DO', 'TDS', 'TEMP', 'EVIDENCE'];
+        let headers = ['TIME', 'TYPE', 'COORDINATES', 'PH', 'DO (PPM)', 'TDS', 'TEMP', 'EVIDENCE'];
         if (view === 'Ocean') { headers = ['TIME', 'TYPE', 'COORDINATES', 'PH', 'TDS', 'TEMP', 'EVIDENCE']; }
         headerRow.innerHTML = headers.map(h => `<th>${h}</th>`).join('');
 
@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data.forEach(row => {
             const isOcean = oceanTypes.includes(row.water_type.toLowerCase());
             if (row.latitude && row.longitude) {
+                // These are the data points (Blue/Green circles)
                 L.circleMarker([row.latitude, row.longitude], {
                     radius: 11, fillColor: isOcean ? '#457b9d' : '#2a9d8f', color: "#fff", weight: 3, fillOpacity: 0.9
                 }).bindPopup(`<b>${row.water_type}</b>`).addTo(markersLayer);
@@ -73,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // FIXED: Drops a map pin onto your exact location
+    // FIXED: Drops a RED map pin onto your exact location
     document.getElementById('btn-detect').addEventListener('click', function() {
         navigator.geolocation.getCurrentPosition(pos => {
             const lat = pos.coords.latitude;
@@ -83,9 +84,19 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('lon-input').value = lon.toFixed(6);
             map.setView([lat, lon], 14);
             
-            // Explicitly drop the map pin
+            // Define the custom Red Pin icon
+            const redIcon = new L.Icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+
+            // Explicitly drop the red map pin
             if (gpsMarker) { map.removeLayer(gpsMarker); }
-            gpsMarker = L.marker([lat, lon]).addTo(map).bindPopup("<b>Your Location</b>").openPopup();
+            gpsMarker = L.marker([lat, lon], {icon: redIcon}).addTo(map).bindPopup("<b>Your Location</b>").openPopup();
         }, (err) => {
             alert("Location access denied or unavailable. Please enable GPS in your browser.");
         });

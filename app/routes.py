@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, send_file, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, send_file, jsonify, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime
 from app import db
@@ -8,6 +8,18 @@ from openpyxl import Workbook
 from io import BytesIO
 
 main_bp = Blueprint('main', __name__)
+
+# FIX: Route to open images based on reading ID
+@main_bp.route('/image/<int:id>')
+@login_required
+def get_image(id):
+    reading = WaterData.query.get_or_404(id)
+    if not reading.image_data:
+        abort(404)
+    return send_file(
+        BytesIO(reading.image_data),
+        mimetype='image/jpeg'
+    )
 
 @main_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -25,7 +37,6 @@ def login():
         u = User.query.filter_by(username=request.form.get('username')).first()
         if u and u.check_password(request.form.get('password')):
             u.visit_count = (u.visit_count or 0) + 1
-            # Track precise date and time for the profile dropdown
             u.last_login = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             db.session.commit()
             login_user(u)

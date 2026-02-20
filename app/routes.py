@@ -9,7 +9,7 @@ from io import BytesIO
 
 main_bp = Blueprint('main', __name__)
 
-# RESTORED: Route to open images based on reading ID
+# Serves sensor images - fixes the "Not Found" error
 @main_bp.route('/image/<int:id>')
 @login_required
 def get_image(id):
@@ -18,7 +18,7 @@ def get_image(id):
         abort(404)
     return send_file(BytesIO(reading.image_data), mimetype='image/jpeg')
 
-# RESTORED: Excel Export with DO (PPM)
+# Handles Excel downloads
 @main_bp.route('/export/<project>')
 @login_required
 def export_excel(project):
@@ -34,7 +34,7 @@ def export_excel(project):
 
     wb = Workbook()
     ws = wb.active
-    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'PH', 'DO', 'TDS', 'TEMP'])
+    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'PH', 'DO (PPM)', 'TDS', 'TEMP'])
     for r in readings:
         ws.append([r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, r.ph, r.do, r.tds, r.temperature])
     
@@ -42,6 +42,17 @@ def export_excel(project):
     wb.save(output)
     output.seek(0)
     return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=f"NRSC_{project}_Report.xlsx")
+
+# Fixes BuildError: Could not build url for endpoint 'main.register'
+@main_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        new_user = User(username=request.form.get('username'), email=request.form.get('email'))
+        new_user.set_password(request.form.get('password'))
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect(url_for('main.login'))
+    return render_template('register.html')
 
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():

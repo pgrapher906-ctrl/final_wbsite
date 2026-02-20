@@ -10,22 +10,18 @@ from io import BytesIO
 
 main_bp = Blueprint('main', __name__)
 
-# FIX: Base64 Decoding for image_path text
 @main_bp.route('/image/<int:id>')
 @login_required
 def get_image(id):
     try:
         reading = WaterData.query.get_or_404(id)
-        # Using image_path as seen in your Neon database
         if not reading.image_path:
             return "No image data available for this reading.", 404
             
         img_text = reading.image_path
-        # Clean the string just in case it contains a data URI header
         if "base64," in img_text:
             img_text = img_text.split("base64,")[1]
             
-        # Decode the text back into binary image data
         decoded_image = base64.b64decode(img_text)
         return send_file(BytesIO(decoded_image), mimetype='image/jpeg')
     except Exception as e:

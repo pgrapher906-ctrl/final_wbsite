@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const oceanTypes = ['open ocean water', 'coastal water', 'estuarine water', 'deep sea water', 'marine surface water'];
     const pondGroupTypes = ['pond water', 'drinking water', 'ground water', 'borewell water'];
 
+    // RESTORED: Click animations
     function triggerBoxAnimation(btn, view) {
         const splash = document.createElement('span');
         splash.className = 'click-splash';
@@ -22,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderDashboard(data, view) {
         const headerRow = document.getElementById('table-header-row');
-        let headers = ['TIME', 'TYPE', 'COORDINATES', 'PH', 'DO (PPM)', 'TDS', 'TEMP', 'EVIDENCE'];
+        let headers = ['TIME', 'TYPE', 'COORDINATES', 'PH', 'DO', 'TDS', 'TEMP', 'EVIDENCE'];
         if (view === 'Ocean') { headers = ['TIME', 'TYPE', 'COORDINATES', 'PH', 'TDS', 'TEMP', 'EVIDENCE']; }
         headerRow.innerHTML = headers.map(h => `<th>${h}</th>`).join('');
 

@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('pond-count').innerText = allData.filter(d => pondGroupTypes.includes(d.water_type.toLowerCase())).length;
     }
 
+    // In-box animation logic
     function triggerBoxAnimation(btn, view) {
         const splash = document.createElement('span');
         splash.className = 'click-splash';

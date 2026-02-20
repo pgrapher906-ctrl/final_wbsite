@@ -16,20 +16,32 @@ def get_image(id):
     reading = WaterData.query.get_or_404(id)
     if not reading.image_data:
         abort(404)
-    return send_file(
-        BytesIO(reading.image_data),
-        mimetype='image/jpeg'
-    )
+    return send_file(BytesIO(reading.image_data), mimetype='image/jpeg')
 
-@main_bp.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        new_user = User(username=request.form.get('username'), email=request.form.get('email'))
-        new_user.set_password(request.form.get('password'))
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect(url_for('main.login'))
-    return render_template('register.html')
+# FIX: Excel Export Logic
+@main_bp.route('/export/<project>')
+@login_required
+def export_excel(project):
+    ocean_group = ['Open Ocean Water', 'Coastal Water', 'Estuarine Water', 'Deep Sea Water', 'Marine Surface Water']
+    pond_group = ['Pond Water', 'Drinking Water', 'Ground Water', 'Borewell Water']
+    
+    if project == "Ocean":
+        readings = WaterData.query.filter(WaterData.water_type.in_(ocean_group)).all()
+    elif project == "Pond":
+        readings = WaterData.query.filter(WaterData.water_type.in_(pond_group)).all()
+    else:
+        readings = WaterData.query.all()
+
+    wb = Workbook()
+    ws = wb.active
+    ws.append(['ID', 'Timestamp', 'Lat', 'Lon', 'Type', 'pH', 'DO (PPM)', 'Temp', 'TDS'])
+    for r in readings:
+        ws.append([r.id, r.timestamp.strftime('%Y-%m-%d %H:%M'), r.latitude, r.longitude, r.water_type, r.ph, r.do, r.temperature, r.tds])
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return send_file(output, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name=f"NRSC_{project}_Report.xlsx")
 
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -53,9 +65,3 @@ def get_data():
 @login_required
 def index():
     return render_template('index.html')
-
-@main_bp.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('main.login'))
